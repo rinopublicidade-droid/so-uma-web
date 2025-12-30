@@ -5,30 +5,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Só Uma — Multiplayer (Host/Dicas/Adivinhador)</title>
   <style>
-    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;--bg:#0b0f17;--card:#101a2b;--stroke:rgba(255,255,255,.12);--text:#f3f6ff;--muted:rgba(243,246,255,.75)}
-    body{margin:0;background:radial-gradient(1100px 700px at 20% 10%, rgba(255,210,90,.14), transparent 55%),
-                 radial-gradient(900px 650px at 80% 20%, rgba(90,200,255,.12), transparent 55%),
-                 linear-gradient(180deg,#0e1630,var(--bg));color:var(--text);min-height:100vh}
+    :root{
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      --bg:#0b0f17; --card:#101a2b; --stroke:rgba(255,255,255,.12);
+      --text:#f3f6ff; --muted:rgba(243,246,255,.75);
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+    }
+    body{
+      margin:0;
+      background:
+        radial-gradient(1100px 700px at 20% 10%, rgba(255,210,90,.14), transparent 55%),
+        radial-gradient(900px 650px at 80% 20%, rgba(90,200,255,.12), transparent 55%),
+        linear-gradient(180deg,#0e1630,var(--bg));
+      color:var(--text);
+      min-height:100vh;
+    }
     .wrap{max-width:980px;margin:0 auto;padding:18px}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.06),transparent 35%),var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px;box-shadow:0 18px 60px rgba(0,0,0,.45)}
+    .card{
+      background: linear-gradient(180deg,rgba(255,255,255,.06),transparent 35%), var(--card);
+      border:1px solid var(--stroke);
+      border-radius:18px;
+      padding:16px;
+      box-shadow: var(--shadow);
+    }
     h1{margin:0 0 6px;font-size:20px}
     .sub{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.35}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
-    .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid var(--stroke);font-size:13px}
-    button,input{border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.09);color:var(--text);padding:10px 12px;font-weight:800}
+    .pill{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(255,255,255,.07);
+      border:1px solid var(--stroke);
+      font-size:13px
+    }
+    button,input{
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.09);
+      color:var(--text);
+      padding:10px 12px;
+      font-weight:800;
+    }
     button{cursor:pointer}
     button:hover{background:rgba(255,255,255,.13)}
-    input{width:min(360px,100%);background:rgba(0,0,0,.18);font-weight:800}
+    button:disabled{opacity:.55; cursor:not-allowed}
+    input{
+      width:min(360px,100%);
+      background:rgba(0,0,0,.18);
+      font-weight:800
+    }
     .words{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
-    .word{padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;font-weight:900}
-    .idx{opacity:.85;font-size:12px;font-weight:1000;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(0,0,0,.18)}
-    .panel{margin-top:12px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18)}
+    .word{
+      padding:12px 14px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      display:flex;justify-content:space-between;align-items:center;
+      text-transform:uppercase;font-weight:900;
+    }
+    .idx{
+      opacity:.85;font-size:12px;font-weight:1000;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.22);
+      background:rgba(0,0,0,.18)
+    }
+    .panel{
+      margin-top:12px;padding:12px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.18)
+    }
     .clues{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-    .clue{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06)}
+    .clue{
+      display:flex;justify-content:space-between;gap:10px;align-items:center;
+      padding:10px 12px;border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06)
+    }
     .small{font-size:12px;color:var(--muted)}
     .danger{background:rgba(255,90,90,.14);border-color:rgba(255,90,90,.35)}
     .ok{background:rgba(90,255,190,.10);border-color:rgba(90,255,190,.25)}
+    .warn{background:rgba(255,206,86,.10);border-color:rgba(255,206,86,.25)}
     code{color:#fff; word-break: break-all;}
+    .grid2{display:grid; grid-template-columns: 1fr 1fr; gap: 10px}
+    @media (max-width:760px){ .grid2{grid-template-columns:1fr} }
+    .divider{height:1px;background:rgba(255,255,255,.10);margin:10px 0}
+    .tag{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      font-size:12px; color: rgba(243,246,255,.85);
+      user-select:none;
+    }
   </style>
 </head>
 <body>
@@ -36,21 +103,26 @@
     <div class="card">
       <h1>Só Uma — Multiplayer</h1>
       <p class="sub">
-        Um celular vira <b>Host</b> (sorteia carta e alvo), os jogadores entram como <b>Dicas</b> (veem o alvo e mandam a dica),
-        e o <b>Adivinhador</b> entra num link separado (vê só as dicas).
+        <b>Host</b> sorteia a carta e o alvo. Jogadores entram em <b>Dicas</b> (veem o alvo e enviam 1 palavra).
+        Quando todos enviarem, o Host clica <b>Revelar dicas</b>, escolhe quais vão valer e então clica <b>Enviar pro adivinhador</b>.
+        O <b>Adivinhador</b> vê apenas as dicas selecionadas.
       </p>
 
       <div class="row">
         <span class="pill">Modo: <b id="mode">—</b></span>
         <span class="pill">Sala: <b id="room">—</b></span>
         <span class="pill">Rodada: <b id="round">—</b></span>
+        <span class="pill">Fase: <b id="phaseLabel">—</b></span>
       </div>
 
+      <!-- HOST -->
       <div id="hostUI" style="display:none">
         <div class="row">
           <button id="newRoomBtn" class="ok">Criar nova sala</button>
           <button id="newCardBtn">Nova carta</button>
           <button id="pickBtn">Sortear alvo (1–5)</button>
+          <button id="revealCluesBtn" class="warn">Revelar dicas</button>
+          <button id="publishCluesBtn" class="ok">Enviar pro adivinhador</button>
           <button id="clearCluesBtn" class="danger">Limpar dicas</button>
         </div>
 
@@ -60,19 +132,46 @@
           <div class="small">Adivinhador: <code id="linkGuess">—</code></div>
         </div>
 
-        <div class="words" id="words"></div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="row" style="margin:0 0 6px">
+              <span class="tag">🃏 Carta</span>
+              <span class="small">As 5 opções (só o Host vê)</span>
+            </div>
+            <div class="words" id="words"></div>
+            <div class="panel" id="targetBox" style="display:none; margin-top:12px">
+              <div><b>Alvo:</b> <span id="targetWord">—</span> <span class="small">(nº <span id="targetN">—</span>)</span></div>
+            </div>
+          </div>
 
-        <div class="panel" id="targetBox" style="display:none">
-          <div><b>Alvo:</b> <span id="targetWord">—</span> <span class="small">(nº <span id="targetN">—</span>)</span></div>
-        </div>
+          <div class="panel">
+            <div class="row" style="margin:0 0 6px">
+              <span class="tag">💬 Dicas</span>
+              <span class="small" id="clueCountText">—</span>
+            </div>
 
-        <div class="panel">
-          <div><b>Dicas recebidas:</b></div>
-          <div class="clues" id="clueList"></div>
-          <div class="small" id="dupHint" style="margin-top:8px"></div>
+            <div class="small" id="cluesHiddenHint" style="display:none">
+              As dicas ficam <b>ocultas</b> até você clicar em <b>Revelar dicas</b>.
+            </div>
+
+            <div class="divider"></div>
+
+            <div id="hostCluesArea">
+              <div class="small" id="hostCluesHelp" style="display:none">
+                Marque as dicas que você quer mandar para o adivinhador e clique em <b>Enviar pro adivinhador</b>.
+              </div>
+              <div class="clues" id="clueList"></div>
+              <div class="small" id="dupHint" style="margin-top:8px"></div>
+              <div class="row" style="margin-top:10px; display:none" id="bulkRow">
+                <button id="selectAllBtn">Marcar todas</button>
+                <button id="unselectAllBtn">Desmarcar todas</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- DICAS -->
       <div id="clueUI" style="display:none">
         <div class="panel">
           <div class="small">Palavra-alvo (só quem dá dica vê):</div>
@@ -87,14 +186,17 @@
         </div>
       </div>
 
+      <!-- ADIVINHADOR -->
       <div id="guessUI" style="display:none">
         <div class="panel">
-          <div class="small">Adivinhador: você vê <b>só as dicas</b>.</div>
-          <div style="margin-top:10px"><b>Dicas:</b></div>
+          <div class="small">Adivinhador: você vê <b>apenas</b> as dicas que o Host selecionar e enviar.</div>
+          <div class="divider"></div>
+          <div class="small" id="guessWait">Aguardando o host enviar as dicas…</div>
           <div class="clues" id="guessClueList"></div>
         </div>
       </div>
 
+      <!-- AJUDA -->
       <div id="helpUI" class="panel" style="display:none">
         <div><b>Como abrir:</b></div>
         <div class="small">
@@ -115,131 +217,154 @@
       appId: "1:492239204930:web:b96a42d1cdb80b86b3b3db"
     };
 
-    // ======= IMPORTS FIREBASE =======
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import {
       getFirestore, doc, setDoc, getDoc, onSnapshot,
       collection, addDoc, serverTimestamp, deleteDoc, getDocs
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    // ======= BARALHO COMPLETO (110 CARTAS) =======
+    // ======= BARALHO (110 CARTAS ORIGINAIS) =======
+    // Observação: não inclui conteúdo oficial do jogo; são cartas originais no mesmo formato (5 opções).
     const DECK = [
-      // 1 - 30
-      ["Sol","Praia","Calor","Verão","Bronzeado"],
-      ["Cachorro","Latido","Coleira","Osso","Amigo"],
-      ["Escola","Professor","Aula","Prova","Caderno"],
-      ["Pizza","Forno","Mussarela","Fatia","Itália"],
-      ["Chuva","Guarda-chuva","Molhado","Nuvem","Temporal"],
-      ["Futebol","Gol","Torcida","Estádio","Bola"],
-      ["Celular","Tela","Aplicativo","Mensagem","Bateria"],
-      ["Café","Xícara","Amargo","Manhã","Energia"],
-      ["Viagem","Mala","Avião","Hotel","Férias"],
-      ["Médico","Hospital","Consulta","Receita","Saúde"],
-      ["Livro","Página","Autor","Leitura","Biblioteca"],
-      ["Festa","Música","Dança","Balão","Alegria"],
-      ["Frio","Casaco","Inverno","Cachecol","Geada"],
-      ["Cinema","Filme","Pipoca","Tela","Sessão"],
-      ["Relógio","Hora","Atraso","Ponteiro","Alarme"],
-      ["Criança","Brinquedo","Escola","Sorriso","Parquinho"],
-      ["Dinheiro","Carteira","Compra","Preço","Troco"],
-      ["Natal","Presente","Papai Noel","Árvore","Família"],
-      ["Internet","Wi-Fi","Conexão","Site","Senha"],
-      ["Cozinha","Fogão","Receita","Panela","Temperar"],
-      ["Trânsito","Semáforo","Engarrafamento","Buzina","Rua"],
-      ["Amizade","Confiança","Risada","Apoio","Companhia"],
-      ["Academia","Peso","Treino","Suor","Músculo"],
-      ["Praia","Areia","Onda","Mar","Protetor"],
-      ["Professor","Lousa","Explicação","Prova","Ensino"],
-      ["Festa Junina","Fogueira","Milho","Quadrilha","Balão"],
-      ["Trabalho","Reunião","Prazo","Meta","Resultado"],
-      ["Cidade","Rua","Bairro","Praça","Movimento"],
-      ["Sorvete","Frio","Doce","Casquinha","Verão"],
-      ["Amor","Coração","Cuidado","Abraço","Afeto"],
+      ["SOL","PRAIA","CALOR","VERÃO","BRONZEADO"],
+      ["CACHORRO","LATIDO","COLEIRA","OSSO","AMIGO"],
+      ["ESCOLA","PROFESSOR","AULA","PROVA","CADERNO"],
+      ["PIZZA","FORNO","MUSSARELA","FATIA","ITÁLIA"],
+      ["CHUVA","GUARDA-CHUVA","MOLHADO","NUVEM","TEMPORAL"],
+      ["FUTEBOL","GOL","TORCIDA","ESTÁDIO","BOLA"],
+      ["CELULAR","TELA","APLICATIVO","MENSAGEM","BATERIA"],
+      ["CAFÉ","XÍCARA","AMARGO","MANHÃ","ENERGIA"],
+      ["VIAGEM","MALA","AVIÃO","HOTEL","FÉRIAS"],
+      ["MÉDICO","HOSPITAL","CONSULTA","RECEITA","SAÚDE"],
+      ["LIVRO","PÁGINA","AUTOR","LEITURA","BIBLIOTECA"],
+      ["FESTA","MÚSICA","DANÇA","BRILHO","ALEGRIA"],
+      ["FRIO","CASACO","INVERNO","CACHECOL","GEADA"],
+      ["CINEMA","FILME","PIPOCA","TELA","SESSÃO"],
+      ["RELÓGIO","HORA","ATRASO","ALARME","PONTEIRO"],
+      ["CRIANÇA","BRINQUEDO","SORRISO","PARQUINHO","BAGUNÇA"],
+      ["DINHEIRO","CARTEIRA","COMPRA","PREÇO","TROCO"],
+      ["NATAL","PRESENTE","ÁRVORE","CEIA","FAMÍLIA"],
+      ["INTERNET","WI-FI","CONEXÃO","SITE","SENHA"],
+      ["COZINHA","FOGÃO","RECEITA","PANELA","TEMPERAR"],
+      ["TRÂNSITO","SEMÁFORO","ENGARRAFAMENTO","BUZINA","RUA"],
+      ["AMIZADE","CONFIANÇA","RISADA","APOIO","COMPANHIA"],
+      ["ACADEMIA","PESO","TREINO","SUOR","MÚSCULO"],
+      ["MAR","AREIA","ONDA","BRISA","PROTETOR"],
+      ["PROFESSOR","LOUSA","EXPLICAÇÃO","ENSINO","NOTA"],
+      ["FESTA JUNINA","FOGUEIRA","MILHO","QUADRILHA","BANDEIRINHA"],
+      ["TRABALHO","REUNIÃO","PRAZO","META","RESULTADO"],
+      ["CIDADE","BAIRRO","PRAÇA","MOVIMENTO","TRADIÇÃO"],
+      ["SORVETE","DOCE","CASQUINHA","CREMOSO","GELADO"],
+      ["AMOR","CORAÇÃO","CUIDADO","ABRAÇO","AFETO"],
 
-      // 31 - 110
-      ["Música","Fone","Volume","Playlist","Ritmo"],
-      ["Chave","Porta","Fechadura","Cadeado","Acesso"],
-      ["Mercado","Carrinho","Oferta","Caixa","Compra"],
-      ["Escola","Recreio","Amigo","Brincadeira","Intervalo"],
-      ["Médico","Estetoscópio","Batimento","Exame","Diagnóstico"],
-      ["Filme","Diretor","Cena","Ator","Oscar"],
-      ["Criança","Colo","Cuidado","Choro","Carinho"],
-      ["Foto","Câmera","Clique","Álbum","Memória"],
-      ["Rua","Calçada","Pedestre","Faixa","Trânsito"],
-      ["Estudo","Foco","Concentração","Silêncio","Resultado"],
-      ["Praia","Cadeira","Guarda-sol","Descanso","Brisa"],
-      ["Cama","Travesseiro","Sono","Descanso","Sonho"],
-      ["Restaurante","Cardápio","Garçom","Pedido","Conta"],
-      ["Igreja","Fé","Oração","Louvor","Esperança"],
-      ["Aniversário","Bolo","Vela","Parabéns","Festa"],
-      ["Chuva","Poça","Guarda-chuva","Pingos","Molhado"],
-      ["Escritório","Computador","Mesa","Relatório","Trabalho"],
-      ["Jantar","Mesa","Família","Conversa","Refeição"],
-      ["Hospital","Enfermagem","Plantão","Emergência","Cuidado"],
-      ["Brinquedo","Quebra-cabeça","Peça","Montar","Paciência"],
-      ["Religião","Bíblia","Ensino","Palavra","Amor"],
-      ["Avião","Decolagem","Asa","Viagem","Altura"],
-      ["Cabelo","Escova","Corte","Espelho","Salão"],
-      ["Compras","Sacola","Loja","Promoção","Preço"],
-      ["Escola","Lápis","Borracha","Escrita","Caderno"],
-      ["Verão","Piscina","Mergulho","Frescor","Sol"],
-      ["Inverno","Cobertor","Frio","Preguiça","Chocolate"],
-      ["Festa","Convite","Lista","Amigos","Encontro"],
-      ["Bicicleta","Pedal","Equilíbrio","Capacete","Passeio"],
-      ["Professor","Explicação","Quadro","Aula","Ensino"],
-      ["Dinheiro","Banco","Cartão","Senha","Conta"],
-      ["Televisão","Controle","Canal","Volume","Sofá"],
-      ["Viagem","Estrada","Parada","Destino","Caminho"],
-      ["Feira","Barraca","Fruta","Feira-livre","Sacola"],
-      ["Cozinha","Prato","Talher","Receita","Sabor"],
-      ["Academia","Esteira","Corrida","Fôlego","Suor"],
-      ["Criança","Escola","Mochila","Lanche","Aprender"],
-      ["Casamento","Aliança","Amor","Festa","União"],
-      ["Internet","Vídeo","Curtida","Comentário","Compartilhar"],
-      ["Trânsito","Farol","Parada","Atenção","Sinal"],
-      ["Almoço","Arroz","Feijão","Prato","Caseiro"],
-      ["Escola","Prova","Nota","Estudo","Resultado"],
-      ["Noite","Silêncio","Lua","Estrelas","Descanso"],
-      ["Trabalho","Esforço","Dedicação","Meta","Conquista"],
-      ["Criança","Desenho","Lápis","Cor","Criatividade"],
-      ["Natal","Ceia","Família","União","Gratidão"],
-      ["Ano Novo","Esperança","Recomeço","Planos","Futuro"],
-      ["Escola","Formatura","Diploma","Orgulho","Conquista"],
-      ["Campo","Grama","Ar Livre","Natureza","Descanso"],
-      ["Carro","Volante","Estrada","Direção","Viagem"],
-      ["Cachorro","Passeio","Guia","Rua","Alegria"],
-      ["Gato","Bigode","Sofá","Preguiça","Miado"],
-      ["Churrasco","Grelha","Carne","Amigos","Fim de semana"],
-      ["Escola","Amizade","Grupo","Trabalho","União"],
-      ["Cuidado","Atenção","Respeito","Empatia","Amor"],
-      ["Parque","Árvore","Banco","Caminhada","Lazer"],
-      ["Celular","Notificação","Mensagem","Alerta","Som"],
-      ["Manhã","Despertador","Sono","Café","Pressa"],
-      ["Tarde","Trabalho","Sol","Movimento","Rotina"],
-      ["Noite","Jantar","Descanso","Família","Conversa"],
-      ["Escola","Biblioteca","Silêncio","Leitura","Estudo"],
-      ["Praia","Caminhada","Areia","Pegada","Mar"],
-      ["Feira","Pastel","Caldo","Encontro","Tradição"],
-      ["Trabalho","Equipe","União","Resultado","Sucesso"],
-      ["Criança","Colo","Proteção","Segurança","Amor"],
-      ["Escola","Professor","Inspiração","Ensino","Futuro"],
-      ["Cidade","Bairro","Comunidade","Pessoas","Vida"],
-      ["Igreja","Comunhão","Encontro","Palavra","Fé"],
-      ["Casa","Lar","Aconchego","Segurança","Família"],
-      ["Amigo","Confiança","Conversa","Apoio","Verdade"],
-      ["Trabalho","Horário","Compromisso","Rotina","Disciplina"],
-      ["Escola","Educação","Base","Conhecimento","Futuro"],
-      ["Festa","Música","Dança","Energia","Alegria"],
-      ["Silêncio","Paz","Calma","Tranquilidade","Equilíbrio"],
-      ["Desafio","Superação","Força","Persistência","Vitória"],
-      ["Esperança","Fé","Confiança","Caminho","Luz"],
-      ["Gratidão","Reconhecimento","Respeito","Amor","Valor"],
-      ["Futuro","Sonho","Planejamento","Dedicação","Conquista"],
-      ["Vida","Tempo","Escolhas","Caminhos","Aprendizado"],
-      ["Jogo","Diversão","Risada","Amigos","Memória"],
+      ["MÚSICA","FONE","PLAYLIST","RITMO","REFRÃO"],
+      ["CHAVE","PORTA","FECHADURA","CADEADO","ENTRADA"],
+      ["MERCADO","CARRINHO","OFERTA","CAIXA","CUPOM"],
+      ["RECREIO","AMIGO","BRINCADEIRA","CORRERIA","INTERVALO"],
+      ["ESTETOSCÓPIO","EXAME","DIAGNÓSTICO","REMÉDIO","PACIENTE"],
+      ["DIRETOR","CENA","ATOR","TRILHA","OSCAR"],
+      ["COLO","CARINHO","PROTEÇÃO","CHORO","SONINHO"],
+      ["FOTO","CÂMERA","CLIQUE","ÁLBUM","MEMÓRIA"],
+      ["PEDESTRE","FAIXA","CALÇADA","SINAL","ATENÇÃO"],
+      ["FOCO","CONCENTRAÇÃO","SILÊNCIO","DISCIPLINA","RESULTADO"],
+      ["GUARDA-SOL","CADEIRA","DESCANSO","ÁGUA","BRISA"],
+      ["CAMA","TRAVESSEIRO","SONO","COBERTA","SONHO"],
+      ["CARDÁPIO","GARÇOM","PEDIDO","CONTA","SOBREMESA"],
+      ["FÉ","ORAÇÃO","LOUVOR","COMUNHÃO","ESPERANÇA"],
+      ["BOLO","VELA","PARABÉNS","FOTO","ANIVERSÁRIO"],
+      ["POÇA","PINGO","ENXURRADA","GOTEIRA","LAMACEIRO"],
+      ["ESCRITÓRIO","COMPUTADOR","MESA","ARQUIVO","PLANILHA"],
+      ["JANTAR","MESA","CONVERSA","FAMÍLIA","RECEITA"],
+      ["PLANTÃO","EMERGÊNCIA","CUIDADO","ENFERMAGEM","URGENÇA"],
+      ["QUEBRA-CABEÇA","PEÇA","MONTAR","PACIÊNCIA","FIGURA"],
+      ["BÍBLIA","PALAVRA","ENSINO","GRAÇA","VERDADE"],
+      ["DECOLAGEM","ASA","ALTURA","TURBULÊNCIA","POUSO"],
+      ["CABELO","ESCOVA","CORTE","ESPELHO","SALÃO"],
+      ["SACOLA","LOJA","PROMOÇÃO","VITRINE","DESCONTO"],
+      ["LÁPIS","BORRACHA","ESCRITA","CANETA","CADERNO"],
+      ["PISCINA","MERGULHO","FRESCOR","TOLBOGÃ","BOIA"],
+      ["COBERTOR","FRIO","CHOCOLATE","PREGUIÇA","SOPINHA"],
+      ["CONVITE","LISTA","ENCONTRO","AMIGOS","MENSAGEM"],
+      ["BICICLETA","PEDAL","EQUILÍBRIO","FREIO","CAPACETE"],
+      ["QUADRO","EXPLICAÇÃO","AULA","DÚVIDA","APRENDER"],
+      ["BANCO","CARTÃO","PIX","CONTA","SALDO"],
+
+      ["CONTROLE","CANAL","VOLUME","SOFÁ","SÉRIE"],
+      ["ESTRADA","DESTINO","PARADA","MAPA","CAMINHO"],
+      ["FEIRA","BARRACA","FRUTA","SACOLA","TROCA"],
+      ["PRATO","TALHER","SABOR","TEMPER0","APETITE"],
+      ["ESTEIRA","CORRIDA","FÔLEGO","META","SUOR"],
+      ["MOCHILA","LANCHE","SALA","AMIGO","APRENDER"],
+      ["ALIANÇA","UNIÃO","FESTA","VOTOS","CELEBRAÇÃO"],
+      ["VÍDEO","CURTIDA","COMENTÁRIO","TREND","COMPARTILHAR"],
+      ["FAROL","SINAL","PARADA","SETAS","PRUDÊNCIA"],
+      ["ARROZ","FEIJÃO","CASEIRO","ALMOÇO","PRATO"],
+      ["NOTA","PROVA","ESTUDO","BOLETIM","RESULTADO"],
+      ["LUA","ESTRELAS","SILÊNCIO","NOITE","DESCANSO"],
+      ["ESFORÇO","DEDICAÇÃO","META","EQUIPE","CONQUISTA"],
+      ["DESENHO","LÁPIS","COR","CRIATIVIDADE","PAPEL"],
+      ["CEIA","UNIÃO","GRATIDÃO","NATAL","FAMÍLIA"],
+      ["RECOMEÇO","PLANOS","FOGO","ABRAÇO","ANO NOVO"],
+      ["DIPLOMA","ORGULHO","FORMATURA","CONQUISTA","FOTO"],
+      ["CAMPO","GRAMA","NATUREZA","AR LIVRE","PAZ"],
+      ["CARRO","VOLANTE","DIREÇÃO","COMBUSTÍVEL","GARAGEM"],
+      ["PASSEIO","GUIA","RUÍDO","ALEGRIA","CACHORRO"],
+      ["MIAU","SOFÁ","ARRANHADOR","BIGODE","PREGUIÇA"],
+      ["GRELHA","CARNE","CARVÃO","AMIGOS","CHURRASCO"],
+      ["GRUPO","UNIÃO","PARCERIA","AMIZADE","ESCOLA"],
+      ["EMPATIA","RESPEITO","ATENÇÃO","CUIDADO","GENTILEZA"],
+      ["PARQUE","ÁRVORE","BANCO","CAMINHADA","LAZER"],
+      ["NOTIFICAÇÃO","ALERTA","MENSAGEM","SOM","CELULAR"],
+      ["DESPERTADOR","SONO","PRESSA","CAFÉ","MANHÃ"],
+      ["ROTINA","SOL","COMPROMISSO","TARDE","MOVIMENTO"],
+      ["JANTAR","DESCANSO","CONVERSA","NOITE","CASA"],
+      ["BIBLIOTECA","SILÊNCIO","PESQUISA","LEITURA","ESTUDO"],
+
+      ["PEGADA","AREIA","CAMINHADA","MAR","PRAIA"],
+      ["PASTEL","CALDO","FILa","FEIRA","TRADIÇÃO"],
+      ["EQUIPE","UNIÃO","SUCESSO","META","TRABALHO"],
+      ["PROTEÇÃO","SEGURANÇA","CARINHO","COLO","CRIANÇA"],
+      ["INSPIRAÇÃO","ENSINO","FUTURO","PROFESSOR","CUIDADO"],
+      ["COMUNIDADE","VIZINHO","BAIRRO","GENTE","CIDADE"],
+      ["ENCONTRO","COMUNHÃO","PALAVRA","FÉ","IGREJA"],
+      ["LAR","ACONCHEGO","PAZ","CASA","SEGURANÇA"],
+      ["VERDADE","CONVERSA","APOIO","AMIGO","CONFIA"],
+      ["HORÁRIO","DISCIPLINA","ROTINA","COMPROMISSO","TRABALHO"],
+      ["EDUCAÇÃO","BASE","CONHECIMENTO","FUTURO","ESCOLA"],
+      ["ENERGIA","DANÇA","MÚSICA","FESTA","RISADA"],
+      ["CALMA","PAZ","TRÂNSITO","RESPIRA","SILÊNCIO"],
+      ["PERSISTÊNCIA","FORÇA","SUPERAR","DESAFIO","VITÓRIA"],
+      ["LUZ","CAMINHO","CONFIANÇA","FÉ","ESPERANÇA"],
+      ["VALOR","RECONHECER","OBRIGADO","GRATIDÃO","RESPEITO"],
+      ["SONHO","PLANO","DEDICAÇÃO","FUTURO","CONQUISTA"],
+      ["ESCOLHAS","TEMPO","VIDA","CAMINHO","APRENDER"],
+      ["DIVERSÃO","RISADA","JOGO","AMIGOS","MEMÓRIA"],
+
+      // completa até 110 com temas variados:
+      ["TEMPERO","SAL","ALHO","CEBOLA","CHEIRO"],
+      ["DOCE","BOLO","CHOCOLATE","BALA","SOBREMESA"],
+      ["SUSTO","GRITO","MEDO","ESCUR0","BARULHO"],
+      ["VIAGEM","ROTEIRO","FOTO","PASSAGEM","GUIA"],
+      ["PAPEL","TESOURA","COLA","ARTE","TRABALHO"],
+      ["CACHOEIRA","TRILHA","PEDRA","ÁGUA","NATUREZA"],
+      ["SHOW","PALCO","LUZES","MULTIDÃO","CANTO"],
+      ["JOGO","DADO","CARTA","TABULEIRO","SORTE"],
+      ["FOTO","SELFIE","POSE","FILTRO","CURTIDA"],
+      ["CHAVEIRO","BOLSO","CHAVE","PERDER","ENCONTRAR"],
+      ["ENVELOPE","CARTA","CORREIO","SEL0","MENSAGEM"],
+      ["CHUVEIRO","BANHO","TOALHA","XAMPU","ESPUMA"],
+      ["MALA","ZÍPER","ROUPA","DOBRAR","PESA"],
+      ["AEROPORTO","CHECK-IN","PORTÃO","FILA","EMBARQUE"],
+      ["SALA","VENTILADOR","CALOR","AR-CONDICIONADO","JANELA"],
+      ["COZINHA","PRATO","PIA","ESPONJA","LOUÇA"],
+      ["PIPOCA","MILHO","SAL","MANTEIGA","BALDE"],
+      ["PRAIA","CONCHA","CASTELO","AREIA","CRIANÇA"],
+      ["CHAPÉU","BONÉ","CABEÇA","SOL","SOMBRA"],
+      ["CAMISA","BOTÃO","GOLA","MANGA","ESTAMPa"],
+      ["SAPATO","CADARÇO","MEIA","PÉ","CONFORTO"],
     ];
 
-    // ======= HELPERS / UI =======
+    // ======= ELEMENTOS / UI =======
     const qs = new URLSearchParams(location.search);
     const role = (qs.get("role") || "").toLowerCase(); // host | clue | guess
     const roomParam = (qs.get("room") || "").toUpperCase();
@@ -247,6 +372,7 @@
     const elMode = document.getElementById("mode");
     const elRoom = document.getElementById("room");
     const elRound = document.getElementById("round");
+    const elPhaseLabel = document.getElementById("phaseLabel");
 
     const hostUI = document.getElementById("hostUI");
     const clueUI = document.getElementById("clueUI");
@@ -262,13 +388,29 @@
     const linkGuess = document.getElementById("linkGuess");
 
     const clueList = document.getElementById("clueList");
-    const guessClueList = document.getElementById("guessClueList");
     const dupHint = document.getElementById("dupHint");
+    const clueCountText = document.getElementById("clueCountText");
+    const cluesHiddenHint = document.getElementById("cluesHiddenHint");
+    const hostCluesHelp = document.getElementById("hostCluesHelp");
+    const bulkRow = document.getElementById("bulkRow");
+    const selectAllBtn = document.getElementById("selectAllBtn");
+    const unselectAllBtn = document.getElementById("unselectAllBtn");
+
+    const guessWait = document.getElementById("guessWait");
+    const guessClueList = document.getElementById("guessClueList");
 
     const clueTarget = document.getElementById("clueTarget");
     const clueName = document.getElementById("clueName");
     const clueText = document.getElementById("clueText");
     const clueStatus = document.getElementById("clueStatus");
+
+    const newRoomBtn = document.getElementById("newRoomBtn");
+    const newCardBtn = document.getElementById("newCardBtn");
+    const pickBtn = document.getElementById("pickBtn");
+    const revealCluesBtn = document.getElementById("revealCluesBtn");
+    const publishCluesBtn = document.getElementById("publishCluesBtn");
+    const clearCluesBtn = document.getElementById("clearCluesBtn");
+    const sendClueBtn = document.getElementById("sendClueBtn");
 
     function fisherYates(arr){
       const a = arr.slice();
@@ -298,6 +440,13 @@
     }
     function normalizeClue(s){ return (s||"").trim().toLowerCase(); }
 
+    function phaseName(p){
+      if (p === "collecting") return "Coletando";
+      if (p === "revealed") return "Revelado (seleção)";
+      if (p === "published") return "Enviado ao adivinhador";
+      return p || "—";
+    }
+
     // ======= FIREBASE INIT =======
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -306,18 +455,16 @@
     function roomRef(rm){ return doc(db, "rooms", rm); }
     function cluesColRef(rm){ return collection(db, "rooms", rm, "clues"); }
 
-    // ======= GAME STATE (host) =======
+    // ======= ESTADO =======
     let room = roomParam || "";
-    let deckOrder = []; // array de índices das cartas
-    let deckPos = 0;
 
     // ======= ACTIONS =======
     async function createRoom(){
       room = code4();
-      deckOrder = fisherYates([...DECK.keys()]);
-      deckPos = 0;
-
+      const deckOrder = fisherYates([...DECK.keys()]);
+      const deckPos = 0;
       const firstIdx = deckOrder[deckPos];
+
       await setDoc(roomRef(room), {
         room,
         round: 1,
@@ -327,13 +474,27 @@
         targetWord: null,
         deckOrder,
         deckPos,
+        phase: "collecting",
+        publishedClues: [],
         updatedAt: serverTimestamp()
       });
 
-      // Atualiza URL do host
       history.replaceState(null, "", makeLink("host", room));
       setupUI();
       attachListeners();
+    }
+
+    async function clearClues(){
+      if (!room) return;
+      const col = cluesColRef(room);
+      const all = await getDocs(col);
+      await Promise.all(all.docs.map(d => deleteDoc(d.ref)));
+
+      await setDoc(roomRef(room), {
+        phase: "collecting",
+        publishedClues: [],
+        updatedAt: serverTimestamp()
+      }, { merge: true });
     }
 
     async function nextCard(){
@@ -341,7 +502,7 @@
       if (!snap.exists()) return;
 
       const data = snap.data();
-      let order = Array.isArray(data.deckOrder) ? data.deckOrder : fisherYates([...DECK.keys()]);
+      const order = Array.isArray(data.deckOrder) ? data.deckOrder : fisherYates([...DECK.keys()]);
       let pos = Number.isFinite(data.deckPos) ? data.deckPos : 0;
 
       pos = (pos + 1) % order.length;
@@ -355,8 +516,13 @@
         targetWord: null,
         deckOrder: order,
         deckPos: pos,
+        phase: "collecting",
+        publishedClues: [],
         updatedAt: serverTimestamp()
       }, { merge: true });
+
+      // limpa as dicas ao iniciar nova rodada (pra ficar prático)
+      await clearClues();
     }
 
     async function pickTarget(){
@@ -364,7 +530,6 @@
       if (!snap.exists()) return;
       const data = snap.data();
       const card = data.card;
-
       if (!Array.isArray(card) || card.length !== 5) return;
 
       const n = Math.floor(Math.random()*5)+1;
@@ -377,18 +542,20 @@
       }, { merge: true });
     }
 
-    async function clearClues(){
-      const col = cluesColRef(room);
-      const all = await getDocs(col);
-      await Promise.all(all.docs.map(d => deleteDoc(d.ref)));
-    }
-
     async function sendClue(){
       const name = (clueName.value || "").trim();
       const txt = (clueText.value || "").trim();
       if (!txt) { clueStatus.textContent = "Digite sua dica."; return; }
 
-      // força “1 palavra”
+      const roomSnap = await getDoc(roomRef(room));
+      if (!roomSnap.exists()) return;
+      const roomData = roomSnap.data();
+
+      if (roomData.phase !== "collecting"){
+        clueStatus.textContent = "Rodada fechada pelo host. Aguarde a próxima carta.";
+        return;
+      }
+
       const oneWord = txt.split(/\s+/)[0];
 
       await addDoc(cluesColRef(room), {
@@ -403,40 +570,119 @@
       setTimeout(()=>clueStatus.textContent="", 1400);
     }
 
+    async function revealClues(){
+      await setDoc(roomRef(room), {
+        phase: "revealed",
+        publishedClues: [],
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
+
+    async function publishSelectedClues(){
+      // pega ids marcados
+      const checks = document.querySelectorAll('input[data-clue-id]');
+      const selectedIds = [];
+      checks.forEach(ch => { if (ch.checked) selectedIds.push(ch.getAttribute("data-clue-id")); });
+
+      const snap = await getDocs(cluesColRef(room));
+      const all = [];
+      snap.forEach(d => all.push({ id:d.id, ...d.data() }));
+
+      const selected = all
+        .filter(it => selectedIds.includes(it.id))
+        .map(it => ({
+          name: it.name || "Jogador",
+          clue: it.clue || "",
+          clueNorm: it.clueNorm || normalizeClue(it.clue)
+        }));
+
+      await setDoc(roomRef(room), {
+        phase: "published",
+        publishedClues: selected,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
+
     // ======= REALTIME LISTENERS =======
     function attachListeners(){
+      // room snapshot
       onSnapshot(roomRef(room), (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
 
+        const phase = data.phase || "collecting";
         elRoom.textContent = room;
         elRound.textContent = String(data.round ?? "—");
-
-        const card = data.card || [];
-        const tn = data.targetN;
-        const tw = data.targetWord;
+        elPhaseLabel.textContent = phaseName(phase);
 
         linkClue.textContent = makeLink("clue", room);
         linkGuess.textContent = makeLink("guess", room);
 
+        const card = data.card || [];
+        const tn = data.targetN;
+        const tw = data.targetWord;
+        const published = Array.isArray(data.publishedClues) ? data.publishedClues : [];
+
         if (role === "host"){
           renderWords(card);
+
           if (tw){
             elTargetBox.style.display = "block";
             elTargetWord.textContent = tw;
             elTargetN.textContent = String(tn);
           } else {
             elTargetBox.style.display = "none";
-            elTargetWord.textContent = "—";
-            elTargetN.textContent = "—";
+          }
+
+          // botões por fase
+          revealCluesBtn.disabled = (phase !== "collecting");
+          publishCluesBtn.disabled = (phase === "collecting");
+
+          // dica do host: se fase coletando, ocultar lista
+          const showClues = (phase === "revealed" || phase === "published");
+          cluesHiddenHint.style.display = showClues ? "none" : "block";
+          hostCluesHelp.style.display = (phase === "revealed") ? "block" : "none";
+          bulkRow.style.display = (phase === "revealed") ? "flex" : "none";
+
+          // se já publicou, pode manter checkboxes visíveis mas travados
+          const lockChecks = (phase === "published");
+          const checkEls = document.querySelectorAll('input[data-clue-id]');
+          checkEls.forEach(ch => ch.disabled = lockChecks);
+
+          // (só pra feedback rápido) quantidade publicada
+          if (phase === "published"){
+            // nada visual extra obrigatório
           }
         }
 
         if (role === "clue"){
           clueTarget.textContent = tw ? tw : "Aguardando alvo…";
+
+          const locked = (phase !== "collecting");
+          sendClueBtn.disabled = locked;
+          clueText.disabled = locked;
+          clueName.disabled = locked;
+          if (locked) clueStatus.textContent = "Rodada fechada. Aguarde a próxima carta.";
+          else clueStatus.textContent = "";
+        }
+
+        if (role === "guess"){
+          guessClueList.innerHTML = "";
+          if (!published.length){
+            guessWait.style.display = "block";
+          } else {
+            guessWait.style.display = "none";
+            published.forEach(it => {
+              const div = document.createElement("div");
+              div.className = "clue";
+              div.innerHTML = `<span><b>${it.name}:</b> ${it.clue}</span><span class="small"></span>`;
+              guessClueList.appendChild(div);
+            });
+          }
         }
       });
 
+      // clues snapshot (host vê contagem sempre; lista só aparece após revelar)
       onSnapshot(cluesColRef(room), (snap) => {
         const items = [];
         snap.forEach(d => items.push({ id:d.id, ...d.data() }));
@@ -447,36 +693,58 @@
           return ta - tb;
         });
 
-        const normCount = new Map();
-        items.forEach(it=>{
-          const k = it.clueNorm || normalizeClue(it.clue);
-          normCount.set(k, (normCount.get(k)||0) + 1);
-        });
+        // contagem sempre
+        clueCountText.textContent = `${items.length} recebida(s)`;
 
-        function renderClueList(targetEl){
-          targetEl.innerHTML = "";
+        if (role !== "host") return;
+
+        // Descobre fase atual (para decidir se lista aparece)
+        getDoc(roomRef(room)).then(roomSnap => {
+          if (!roomSnap.exists()) return;
+          const phase = (roomSnap.data().phase || "collecting");
+
+          const showClues = (phase === "revealed" || phase === "published");
+          clueList.innerHTML = "";
+          dupHint.textContent = "";
+
+          if (!showClues){
+            // não renderiza dicas na fase de coleta
+            return;
+          }
+
+          const normCount = new Map();
+          items.forEach(it=>{
+            const k = it.clueNorm || normalizeClue(it.clue);
+            normCount.set(k, (normCount.get(k)||0) + 1);
+          });
+
           items.forEach(it=>{
             const key = it.clueNorm || normalizeClue(it.clue);
             const dup = (normCount.get(key) || 0) > 1;
-            const div = document.createElement("div");
-            div.className = "clue";
-            div.innerHTML = `<span><b>${it.name||"Jogador"}:</b> ${it.clue||""}</span>
-                             <span class="small">${dup ? "duplicada ⚠️" : ""}</span>`;
-            targetEl.appendChild(div);
-          });
-        }
 
-        if (role === "host"){
-          renderClueList(clueList);
+            const row = document.createElement("div");
+            row.className = "clue";
+
+            const disabled = (phase === "published") ? "disabled" : "";
+            row.innerHTML = `
+              <span>
+                <b>${it.name||"Jogador"}:</b> ${it.clue||""}
+                <span class="small">${dup ? " (duplicada ⚠️)" : ""}</span>
+              </span>
+              <span>
+                <input type="checkbox" data-clue-id="${it.id}" title="Marque para enviar ao adivinhador" ${disabled} />
+              </span>
+            `;
+            clueList.appendChild(row);
+          });
+
           const dups = [...normCount.entries()].filter(([_,v])=>v>1).map(([k])=>k);
-          dupHint.textContent = dups.length ? `Duplicadas: ${dups.join(", ")}` : "Sem duplicadas (por enquanto).";
-        }
-        if (role === "guess"){
-          renderClueList(guessClueList);
-        }
+          dupHint.textContent = dups.length ? `Duplicadas: ${dups.join(", ")}` : "Sem duplicadas.";
+        });
       });
     }
 
+    // ======= UI =======
     function setupUI(){
       elRoom.textContent = room || "—";
       elMode.textContent = role ? role.toUpperCase() : "—";
@@ -492,12 +760,21 @@
       else helpUI.style.display = "block";
     }
 
-    // ======= BUTTONS =======
-    document.getElementById("newRoomBtn").addEventListener("click", createRoom);
-    document.getElementById("newCardBtn").addEventListener("click", nextCard);
-    document.getElementById("pickBtn").addEventListener("click", pickTarget);
-    document.getElementById("clearCluesBtn").addEventListener("click", clearClues);
-    document.getElementById("sendClueBtn").addEventListener("click", sendClue);
+    // ======= EVENTOS =======
+    newRoomBtn.addEventListener("click", createRoom);
+    newCardBtn.addEventListener("click", nextCard);
+    pickBtn.addEventListener("click", pickTarget);
+    revealCluesBtn.addEventListener("click", revealClues);
+    publishCluesBtn.addEventListener("click", publishSelectedClues);
+    clearCluesBtn.addEventListener("click", clearClues);
+    if (sendClueBtn) sendClueBtn.addEventListener("click", sendClue);
+
+    selectAllBtn.addEventListener("click", () => {
+      document.querySelectorAll('input[data-clue-id]').forEach(ch => { if (!ch.disabled) ch.checked = true; });
+    });
+    unselectAllBtn.addEventListener("click", () => {
+      document.querySelectorAll('input[data-clue-id]').forEach(ch => { if (!ch.disabled) ch.checked = false; });
+    });
 
     // ======= INIT =======
     setupUI();
