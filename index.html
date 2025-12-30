@@ -96,6 +96,13 @@
       font-size:12px; color: rgba(243,246,255,.85);
       user-select:none;
     }
+    .iconBtn{
+      border-radius:12px;
+      padding:8px 10px;
+      font-weight:1000;
+    }
+    .trash{background:rgba(255,90,90,.12); border-color:rgba(255,90,90,.30)}
+    .trash:hover{background:rgba(255,90,90,.20)}
     .hintBox{
       padding:10px 12px;border-radius:12px;
       border:1px dashed rgba(255,255,255,.20);
@@ -108,9 +115,8 @@
     <div class="card">
       <h1>Só Uma — Multiplayer</h1>
       <p class="sub">
-        <b>Host</b> sorteia a carta e o alvo. Jogadores entram em <b>Dicas</b> (veem a carta + o alvo e enviam 1 palavra).
-        O Host clica <b>Revelar dicas</b> pra abrir seleção e depois <b>Enviar pro adivinhador</b>.
-        O <b>Adivinhador</b> vê apenas as dicas publicadas.
+        Fase 1: jogadores enviam dicas. • Fase 2: Host clica <b>Revelar</b> e todos veem as dicas.
+        • Host remove as dicas ruins. • Host clica <b>Enviar pro adivinhador</b>.
       </p>
 
       <div class="row">
@@ -126,7 +132,7 @@
           <button id="newRoomBtn" class="ok">Criar nova sala</button>
           <button id="newCardBtn">Nova carta</button>
           <button id="pickBtn">Sortear alvo (1–5)</button>
-          <button id="revealCluesBtn" class="warn">Revelar dicas</button>
+          <button id="revealCluesBtn" class="warn">Revelar (todos veem)</button>
           <button id="publishCluesBtn" class="ok">Enviar pro adivinhador</button>
           <button id="clearCluesBtn" class="danger">Limpar dicas</button>
         </div>
@@ -141,31 +147,24 @@
           <div class="panel">
             <div class="row" style="margin:0 0 6px">
               <span class="tag">🃏 Carta</span>
-              <span class="small">As 5 opções (Host e Dicas veem)</span>
+              <span class="small">Host e Dicas veem (Adivinhador não)</span>
             </div>
             <div class="words" id="hostWords"></div>
             <div class="panel" id="hostTargetBox" style="display:none; margin-top:12px">
               <div><b>Alvo:</b> <span id="hostTargetWord">—</span> <span class="small">(nº <span id="hostTargetN">—</span>)</span></div>
             </div>
             <div class="hintBox small" style="margin-top:10px">
-              Dica: clique <b>Sortear alvo</b> e só depois deixe a galera mandar as dicas.
+              Dica: clique <b>Sortear alvo</b> antes de pedir as dicas.
             </div>
           </div>
 
           <div class="panel">
             <div class="row" style="margin:0 0 6px">
-              <span class="tag">💬 Dicas chegando</span>
+              <span class="tag">💬 Dicas</span>
               <span class="small" id="hostClueCount">0 recebida(s)</span>
             </div>
-
-            <div class="small" id="hostPhaseHelp" style="margin-bottom:10px"></div>
-
+            <div class="small" id="hostPhaseHelp"></div>
             <div class="divider"></div>
-
-            <div class="row" id="bulkRow" style="display:none; margin-top:0">
-              <button id="selectAllBtn">Marcar todas</button>
-              <button id="unselectAllBtn">Desmarcar todas</button>
-            </div>
 
             <div class="clues" id="hostClueList"></div>
             <div class="small" id="dupHint" style="margin-top:8px"></div>
@@ -179,13 +178,19 @@
           <div class="panel">
             <div class="row" style="margin:0 0 6px">
               <span class="tag">🃏 Carta</span>
-              <span class="small">Você vê as 5 opções (não é o adivinhador)</span>
+              <span class="small">Você vê as 5 opções</span>
             </div>
             <div class="words" id="clueWords"></div>
+
+            <div class="panel" style="margin-top:12px">
+              <div class="small">Dicas (aparecem quando o Host clicar <b>Revelar</b>):</div>
+              <div class="small" id="clueWaitReveal">Aguardando o Host revelar…</div>
+              <div class="clues" id="clueClueList"></div>
+            </div>
           </div>
 
           <div class="panel">
-            <div class="small">Palavra-alvo (só quem dá dica vê):</div>
+            <div class="small">Palavra-alvo:</div>
             <div style="font-size:22px;font-weight:1000;text-transform:uppercase;margin-top:6px" id="clueTarget">—</div>
 
             <div class="small" style="margin-top:10px">Envie <b>uma palavra</b> como dica:</div>
@@ -202,7 +207,7 @@
       <!-- ADIVINHADOR -->
       <div id="guessUI" style="display:none">
         <div class="panel">
-          <div class="small">Adivinhador: você vê <b>apenas</b> as dicas que o Host selecionar e enviar.</div>
+          <div class="small">Adivinhador: você vê <b>apenas</b> as dicas que o Host decidiu manter e enviar.</div>
           <div class="divider"></div>
           <div class="small" id="guessWait">Aguardando o host enviar as dicas…</div>
           <div class="clues" id="guessClueList"></div>
@@ -237,7 +242,6 @@
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
     // ======= BARALHO (110 CARTAS) =======
-    // (Cartas originais em formato 5 palavras)
     const DECK = [
       ["SOL","PRAIA","CALOR","VERÃO","BRONZEADO"],
       ["CACHORRO","LATIDO","COLEIRA","OSSO","AMIGO"],
@@ -353,7 +357,6 @@
       ["ESCOLHAS","TEMPO","VIDA","CAMINHO","APRENDER"],
       ["DIVERSÃO","RISADA","JOGO","AMIGOS","MEMÓRIA"],
 
-      // completa até 110
       ["TEMPERO","SAL","ALHO","CEBOLA","CHEIRO"],
       ["DOCE","BOLO","CHOCOLATE","BALA","SOBREMESA"],
       ["SUSTO","GRITO","MEDO","ESCURIDÃO","BARULHO"],
@@ -382,7 +385,7 @@
     const role = (qs.get("role") || "").toLowerCase(); // host | clue | guess
     const roomParam = (qs.get("room") || "").toUpperCase();
 
-    // ======= UI refs =======
+    // ======= UI =======
     const elMode = document.getElementById("mode");
     const elRoom = document.getElementById("room");
     const elRound = document.getElementById("round");
@@ -407,14 +410,13 @@
     const hostPhaseHelp = document.getElementById("hostPhaseHelp");
     const hostClueList = document.getElementById("hostClueList");
     const dupHint = document.getElementById("dupHint");
-    const bulkRow = document.getElementById("bulkRow");
-    const selectAllBtn = document.getElementById("selectAllBtn");
-    const unselectAllBtn = document.getElementById("unselectAllBtn");
 
     const clueTarget = document.getElementById("clueTarget");
     const clueName = document.getElementById("clueName");
     const clueText = document.getElementById("clueText");
     const clueStatus = document.getElementById("clueStatus");
+    const clueWaitReveal = document.getElementById("clueWaitReveal");
+    const clueClueList = document.getElementById("clueClueList");
 
     const guessWait = document.getElementById("guessWait");
     const guessClueList = document.getElementById("guessClueList");
@@ -448,8 +450,8 @@
 
     function phaseName(p){
       if (p === "collecting") return "Coletando";
-      if (p === "revealed") return "Revelado (seleção)";
-      if (p === "published") return "Publicado";
+      if (p === "revealed") return "Revelado";
+      if (p === "published") return "Enviado";
       return p || "—";
     }
 
@@ -472,7 +474,7 @@
 
     // ======= state =======
     let room = roomParam || "";
-    let currentPhase = "collecting"; // atualizado pelo room snapshot
+    let currentPhase = "collecting"; // atualizada pelo room snapshot
 
     // ======= actions =======
     async function createRoom(){
@@ -562,7 +564,6 @@
       const txt = (clueText.value || "").trim();
       if (!txt) { clueStatus.textContent = "Digite sua dica."; return; }
 
-      // trava se não estiver coletando
       if (currentPhase !== "collecting"){
         clueStatus.textContent = "Rodada fechada pelo host. Aguarde a próxima carta.";
         return;
@@ -585,45 +586,36 @@
     async function revealClues(){
       await setDoc(roomRef(room), {
         phase: "revealed",
-        publishedClues: [],
         updatedAt: serverTimestamp()
       }, { merge: true });
     }
 
-    async function publishSelectedClues(){
-      // ids marcados
-      const checks = document.querySelectorAll('input[data-clue-id]');
-      let selectedIds = [];
-      checks.forEach(ch => { if (ch.checked) selectedIds.push(ch.getAttribute("data-clue-id")); });
-
-      // lê as dicas atuais
+    async function publishToGuess(){
+      // publica o que sobrou no banco (todas as dicas restantes)
       const snap = await getDocs(cluesColRef(room));
       const all = [];
       snap.forEach(d => all.push({ id:d.id, ...d.data() }));
 
-      // se não marcou nada, publica todas
-      if (selectedIds.length === 0){
-        selectedIds = all.map(it => it.id);
-      }
-
-      const selected = all
-        .filter(it => selectedIds.includes(it.id))
-        .map(it => ({
-          name: it.name || "Jogador",
-          clue: it.clue || "",
-          clueNorm: it.clueNorm || normalizeClue(it.clue)
-        }));
+      const payload = all.map(it => ({
+        name: it.name || "Jogador",
+        clue: it.clue || "",
+        clueNorm: it.clueNorm || normalizeClue(it.clue)
+      }));
 
       await setDoc(roomRef(room), {
         phase: "published",
-        publishedClues: selected,
+        publishedClues: payload,
         updatedAt: serverTimestamp()
       }, { merge: true });
     }
 
+    async function removeClue(clueId){
+      // só o host usa
+      await deleteDoc(doc(db, "rooms", room, "clues", clueId));
+    }
+
     // ======= listeners =======
     function attachListeners(){
-      // room changes
       onSnapshot(roomRef(room), (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
@@ -642,9 +634,9 @@
         const tw = data.targetWord;
         const published = Array.isArray(data.publishedClues) ? data.publishedClues : [];
 
-        // Host vê carta + alvo
         if (role === "host"){
           renderWords(hostWords, card);
+
           if (tw){
             hostTargetBox.style.display = "block";
             hostTargetWord.textContent = tw;
@@ -655,18 +647,16 @@
 
           revealCluesBtn.disabled = (currentPhase !== "collecting");
           publishCluesBtn.disabled = (currentPhase !== "revealed");
-          bulkRow.style.display = (currentPhase === "revealed") ? "flex" : "none";
 
           if (currentPhase === "collecting"){
-            hostPhaseHelp.textContent = "Fase de coleta: as dicas chegam abaixo. Quando estiver pronto, clique em “Revelar dicas” para selecionar.";
+            hostPhaseHelp.textContent = "Coletando: dicas chegando. Quando todos enviarem, clique em “Revelar”.";
           } else if (currentPhase === "revealed"){
-            hostPhaseHelp.textContent = "Fase revelada: marque as dicas que quer enviar (ou envie sem marcar para mandar todas).";
+            hostPhaseHelp.textContent = "Revelado: todo mundo está vendo as dicas. Apague as ruins e depois clique em “Enviar pro adivinhador”.";
           } else {
-            hostPhaseHelp.textContent = "Publicado: o adivinhador já está vendo as dicas selecionadas.";
+            hostPhaseHelp.textContent = "Enviado: o adivinhador já recebeu. Use “Nova carta” para próxima rodada.";
           }
         }
 
-        // Jogador de dica vê carta + alvo
         if (role === "clue"){
           renderWords(clueWords, card);
           clueTarget.textContent = tw ? tw : "Aguardando alvo…";
@@ -676,16 +666,22 @@
           clueText.disabled = locked;
           clueName.disabled = locked;
 
-          if (locked){
-            clueStatus.textContent = (currentPhase === "published")
-              ? "Host já enviou as dicas ao adivinhador. Aguarde a próxima carta."
-              : "Host está selecionando as dicas. Aguarde…";
-          } else {
+          if (currentPhase === "collecting"){
             clueStatus.textContent = "";
+          } else if (currentPhase === "revealed"){
+            clueStatus.textContent = "Dicas reveladas! Agora você pode ver o que todo mundo mandou.";
+          } else {
+            clueStatus.textContent = "Host já enviou ao adivinhador. Aguarde a próxima carta.";
+          }
+
+          // revela lista pros jogadores apenas quando phase >= revealed
+          if (currentPhase === "collecting"){
+            clueWaitReveal.style.display = "block";
+          } else {
+            clueWaitReveal.style.display = "none";
           }
         }
 
-        // Adivinhador vê só publicadas
         if (role === "guess"){
           guessClueList.innerHTML = "";
           if (!published.length){
@@ -702,33 +698,29 @@
         }
       });
 
-      // clues changes (tempo real)
       onSnapshot(cluesColRef(room), (snap) => {
         const items = [];
         snap.forEach(d => items.push({ id:d.id, ...d.data() }));
 
-        // ordena (melhor esforço)
         items.sort((a,b)=>{
           const ta = a.createdAt?.seconds || 0;
           const tb = b.createdAt?.seconds || 0;
           return ta - tb;
         });
 
+        // duplicadas
+        const normCount = new Map();
+        items.forEach(it=>{
+          const k = it.clueNorm || normalizeClue(it.clue);
+          normCount.set(k, (normCount.get(k)||0) + 1);
+        });
+        const dups = [...normCount.entries()].filter(([_,v])=>v>1).map(([k])=>k);
+
         if (role === "host"){
           hostClueCount.textContent = `${items.length} recebida(s)`;
-
-          // contagem duplicadas
-          const normCount = new Map();
-          items.forEach(it=>{
-            const k = it.clueNorm || normalizeClue(it.clue);
-            normCount.set(k, (normCount.get(k)||0) + 1);
-          });
-          const dups = [...normCount.entries()].filter(([_,v])=>v>1).map(([k])=>k);
           dupHint.textContent = dups.length ? `Duplicadas: ${dups.join(", ")}` : "Sem duplicadas.";
 
-          // renderiza lista sempre; checkbox só na fase revealed
           hostClueList.innerHTML = "";
-
           items.forEach(it=>{
             const key = it.clueNorm || normalizeClue(it.clue);
             const dup = (normCount.get(key) || 0) > 1;
@@ -736,19 +728,42 @@
             const row = document.createElement("div");
             row.className = "clue";
 
-            const showCheckbox = (currentPhase === "revealed");
-            const checkboxHtml = showCheckbox
-              ? `<input type="checkbox" data-clue-id="${it.id}" title="Marque para enviar ao adivinhador" />`
-              : `<span class="small">${currentPhase === "collecting" ? "—" : ""}</span>`;
+            // botão de lixeira só na fase revealed
+            const trashBtn = (currentPhase === "revealed")
+              ? `<button class="iconBtn trash" data-del="${it.id}" title="Remover dica">🗑️</button>`
+              : `<span class="small">—</span>`;
 
             row.innerHTML = `
               <span>
                 <b>${it.name||"Jogador"}:</b> ${it.clue||""}
                 <span class="small">${dup ? " (duplicada ⚠️)" : ""}</span>
               </span>
-              <span>${checkboxHtml}</span>
+              <span>${trashBtn}</span>
             `;
             hostClueList.appendChild(row);
+          });
+
+          // bind delete buttons
+          hostClueList.querySelectorAll("button[data-del]").forEach(btn=>{
+            btn.addEventListener("click", async () => {
+              const id = btn.getAttribute("data-del");
+              await removeClue(id);
+            });
+          });
+        }
+
+        if (role === "clue"){
+          // jogadores só veem a lista quando revealed/published
+          clueClueList.innerHTML = "";
+          if (currentPhase === "collecting"){
+            return;
+          }
+
+          items.forEach(it=>{
+            const row = document.createElement("div");
+            row.className = "clue";
+            row.innerHTML = `<span><b>${it.name||"Jogador"}:</b> ${it.clue||""}</span><span class="small"></span>`;
+            clueClueList.appendChild(row);
           });
         }
       });
@@ -775,16 +790,9 @@
     newCardBtn?.addEventListener("click", nextCard);
     pickBtn?.addEventListener("click", pickTarget);
     revealCluesBtn?.addEventListener("click", revealClues);
-    publishCluesBtn?.addEventListener("click", publishSelectedClues);
+    publishCluesBtn?.addEventListener("click", publishToGuess);
     clearCluesBtn?.addEventListener("click", clearClues);
     sendClueBtn?.addEventListener("click", sendClue);
-
-    selectAllBtn?.addEventListener("click", () => {
-      document.querySelectorAll('input[data-clue-id]').forEach(ch => { ch.checked = true; });
-    });
-    unselectAllBtn?.addEventListener("click", () => {
-      document.querySelectorAll('input[data-clue-id]').forEach(ch => { ch.checked = false; });
-    });
 
     // ======= init =======
     setupUI();
