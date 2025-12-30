@@ -59,20 +59,64 @@
       border:1px solid rgba(255,255,255,.12);
       background:rgba(0,0,0,.18)
     }
-    .words{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+
+    /* ======= CARTAS COLORIDAS (5 OPÇÕES) ======= */
+    .words{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      margin-top:10px;
+    }
     .word{
-      padding:12px 14px;border-radius:14px;
+      position:relative;
+      padding:14px;
+      border-radius:16px;
       border:1px solid rgba(255,255,255,.14);
       background:rgba(255,255,255,.06);
-      display:flex;justify-content:space-between;align-items:center;
-      text-transform:uppercase;font-weight:900;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      text-transform:uppercase;
+      font-weight:1000;
+      letter-spacing:.5px;
+      overflow:hidden;
     }
+    .word::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      opacity:.95;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--opt) 62%, transparent) 0%, rgba(0,0,0,.05) 70%);
+      pointer-events:none;
+    }
+    .word::after{
+      content:"";
+      position:absolute;
+      left:-40px; top:-40px;
+      width:140px; height:140px;
+      border-radius:999px;
+      background: color-mix(in srgb, var(--opt) 28%, transparent);
+      filter: blur(2px);
+      opacity:.65;
+      pointer-events:none;
+    }
+    .word > span{ position:relative; z-index:1; }
     .idx{
-      opacity:.85;font-size:12px;font-weight:1000;
-      padding:6px 10px;border-radius:999px;
+      position:relative;
+      z-index:1;
+      font-size:12px;
+      font-weight:1100;
+      padding:7px 10px;
+      border-radius:999px;
       border:1px solid rgba(255,255,255,.22);
-      background:rgba(0,0,0,.18)
+      background:rgba(0,0,0,.20);
     }
+    .opt1{ --opt: #ff6b6b; }
+    .opt2{ --opt: #ffd166; }
+    .opt3{ --opt: #06d6a0; }
+    .opt4{ --opt: #4dabf7; }
+    .opt5{ --opt: #b197fc; }
+
     .clues{display:flex;flex-direction:column;gap:8px;margin-top:10px}
     .clue{
       display:flex;justify-content:space-between;gap:10px;align-items:center;
@@ -99,7 +143,7 @@
     .iconBtn{
       border-radius:12px;
       padding:8px 10px;
-      font-weight:1000;
+      font-weight:1100;
     }
     .trash{background:rgba(255,90,90,.12); border-color:rgba(255,90,90,.30)}
     .trash:hover{background:rgba(255,90,90,.20)}
@@ -455,11 +499,12 @@
       return p || "—";
     }
 
+    // ✅ render colorido (opt1..opt5)
     function renderWords(container, words){
       container.innerHTML = "";
       (words || []).forEach((w,i)=>{
         const div = document.createElement("div");
-        div.className = "word";
+        div.className = `word opt${i+1}`;
         div.innerHTML = `<span>${w}</span><span class="idx">${i+1}</span>`;
         container.appendChild(div);
       });
@@ -474,7 +519,7 @@
 
     // ======= state =======
     let room = roomParam || "";
-    let currentPhase = "collecting"; // atualizada pelo room snapshot
+    let currentPhase = "collecting";
 
     // ======= actions =======
     async function createRoom(){
@@ -591,7 +636,6 @@
     }
 
     async function publishToGuess(){
-      // publica o que sobrou no banco (todas as dicas restantes)
       const snap = await getDocs(cluesColRef(room));
       const all = [];
       snap.forEach(d => all.push({ id:d.id, ...d.data() }));
@@ -610,7 +654,6 @@
     }
 
     async function removeClue(clueId){
-      // só o host usa
       await deleteDoc(doc(db, "rooms", room, "clues", clueId));
     }
 
@@ -651,9 +694,9 @@
           if (currentPhase === "collecting"){
             hostPhaseHelp.textContent = "Coletando: dicas chegando. Quando todos enviarem, clique em “Revelar”.";
           } else if (currentPhase === "revealed"){
-            hostPhaseHelp.textContent = "Revelado: todo mundo está vendo as dicas. Apague as ruins e depois clique em “Enviar pro adivinhador”.";
+            hostPhaseHelp.textContent = "Revelado: todos veem as dicas. Apague as ruins (🗑️) e depois clique em “Enviar pro adivinhador”.";
           } else {
-            hostPhaseHelp.textContent = "Enviado: o adivinhador já recebeu. Use “Nova carta” para próxima rodada.";
+            hostPhaseHelp.textContent = "Enviado: adivinhador já recebeu. Use “Nova carta” para próxima rodada.";
           }
         }
 
@@ -668,16 +711,12 @@
 
           if (currentPhase === "collecting"){
             clueStatus.textContent = "";
+            clueWaitReveal.style.display = "block";
           } else if (currentPhase === "revealed"){
             clueStatus.textContent = "Dicas reveladas! Agora você pode ver o que todo mundo mandou.";
+            clueWaitReveal.style.display = "none";
           } else {
             clueStatus.textContent = "Host já enviou ao adivinhador. Aguarde a próxima carta.";
-          }
-
-          // revela lista pros jogadores apenas quando phase >= revealed
-          if (currentPhase === "collecting"){
-            clueWaitReveal.style.display = "block";
-          } else {
             clueWaitReveal.style.display = "none";
           }
         }
@@ -708,7 +747,6 @@
           return ta - tb;
         });
 
-        // duplicadas
         const normCount = new Map();
         items.forEach(it=>{
           const k = it.clueNorm || normalizeClue(it.clue);
@@ -728,7 +766,6 @@
             const row = document.createElement("div");
             row.className = "clue";
 
-            // botão de lixeira só na fase revealed
             const trashBtn = (currentPhase === "revealed")
               ? `<button class="iconBtn trash" data-del="${it.id}" title="Remover dica">🗑️</button>`
               : `<span class="small">—</span>`;
@@ -743,7 +780,6 @@
             hostClueList.appendChild(row);
           });
 
-          // bind delete buttons
           hostClueList.querySelectorAll("button[data-del]").forEach(btn=>{
             btn.addEventListener("click", async () => {
               const id = btn.getAttribute("data-del");
@@ -753,12 +789,10 @@
         }
 
         if (role === "clue"){
-          // jogadores só veem a lista quando revealed/published
           clueClueList.innerHTML = "";
           if (currentPhase === "collecting"){
             return;
           }
-
           items.forEach(it=>{
             const row = document.createElement("div");
             row.className = "clue";
