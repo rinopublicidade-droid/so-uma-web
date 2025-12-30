@@ -269,7 +269,6 @@
   </div>
 
   <script type="module">
-    // ======= FIREBASE CONFIG (SEU) =======
     const firebaseConfig = {
       apiKey: "AIzaSyBnFKG9BmzKV4zWcSaZ59qiEaSX6rRwAuo",
       authDomain: "so-uma-game.firebaseapp.com",
@@ -317,7 +316,6 @@
       ["CIDADE","BAIRRO","PRAÇA","MOVIMENTO","TRADIÇÃO"],
       ["SORVETE","DOCE","CASQUINHA","CREMOSO","GELADO"],
       ["AMOR","CORAÇÃO","CUIDADO","ABRAÇO","AFETO"],
-
       ["MÚSICA","FONE","PLAYLIST","RITMO","REFRÃO"],
       ["CHAVE","PORTA","FECHADURA","CADEADO","ENTRADA"],
       ["MERCADO","CARRINHO","OFERTA","CAIXA","CUPOM"],
@@ -349,7 +347,6 @@
       ["BICICLETA","PEDAL","EQUILÍBRIO","FREIO","CAPACETE"],
       ["QUADRO","EXPLICAÇÃO","AULA","DÚVIDA","APRENDER"],
       ["BANCO","CARTÃO","PIX","CONTA","SALDO"],
-
       ["CONTROLE","CANAL","VOLUME","SOFÁ","SÉRIE"],
       ["ESTRADA","DESTINO","PARADA","MAPA","CAMINHO"],
       ["FEIRA","BARRACA","FRUTA","SACOLA","TROCA"],
@@ -380,7 +377,6 @@
       ["ROTINA","SOL","COMPROMISSO","TARDE","MOVIMENTO"],
       ["JANTAR","DESCANSO","CONVERSA","NOITE","CASA"],
       ["BIBLIOTECA","SILÊNCIO","PESQUISA","LEITURA","ESTUDO"],
-
       ["PEGADA","AREIA","CAMINHADA","MAR","PRAIA"],
       ["PASTEL","CALDO","FILA","FEIRA","TRADIÇÃO"],
       ["EQUIPE","UNIÃO","SUCESSO","META","TRABALHO"],
@@ -400,7 +396,6 @@
       ["SONHO","PLANO","DEDICAÇÃO","FUTURO","CONQUISTA"],
       ["ESCOLHAS","TEMPO","VIDA","CAMINHO","APRENDER"],
       ["DIVERSÃO","RISADA","JOGO","AMIGOS","MEMÓRIA"],
-
       ["TEMPERO","SAL","ALHO","CEBOLA","CHEIRO"],
       ["DOCE","BOLO","CHOCOLATE","BALA","SOBREMESA"],
       ["SUSTO","GRITO","MEDO","ESCURIDÃO","BARULHO"],
@@ -424,12 +419,10 @@
       ["SAPATO","CADARÇO","MEIA","PÉ","CONFORTO"],
     ];
 
-    // ======= URL / ROLE =======
     const qs = new URLSearchParams(location.search);
-    const role = (qs.get("role") || "").toLowerCase(); // host | clue | guess
+    const role = (qs.get("role") || "").toLowerCase();
     const roomParam = (qs.get("room") || "").toUpperCase();
 
-    // ======= UI =======
     const elMode = document.getElementById("mode");
     const elRoom = document.getElementById("room");
     const elRound = document.getElementById("round");
@@ -473,7 +466,6 @@
     const clearCluesBtn = document.getElementById("clearCluesBtn");
     const sendClueBtn = document.getElementById("sendClueBtn");
 
-    // ======= helpers =======
     function fisherYates(arr){
       const a = arr.slice();
       for (let i=a.length-1;i>0;i--){
@@ -491,15 +483,12 @@
     function baseUrl(){ return location.origin + location.pathname; }
     function makeLink(r, rm){ return `${baseUrl()}?role=${r}&room=${rm}`; }
     function normalizeClue(s){ return (s||"").trim().toLowerCase(); }
-
     function phaseName(p){
       if (p === "collecting") return "Coletando";
       if (p === "revealed") return "Revelado";
       if (p === "published") return "Enviado";
       return p || "—";
     }
-
-    // ✅ render colorido (opt1..opt5)
     function renderWords(container, words){
       container.innerHTML = "";
       (words || []).forEach((w,i)=>{
@@ -510,18 +499,18 @@
       });
     }
 
-    // ======= Firebase =======
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     function roomRef(rm){ return doc(db, "rooms", rm); }
     function cluesColRef(rm){ return collection(db, "rooms", rm, "clues"); }
 
-    // ======= state =======
     let room = roomParam || "";
     let currentPhase = "collecting";
 
-    // ======= actions =======
+    // ✅ NOVO: guardamos as dicas para re-renderizar quando a fase mudar
+    let latestClues = [];
+
     async function createRoom(){
       room = code4();
       const deckOrder = fisherYates([...DECK.keys()]);
@@ -633,6 +622,8 @@
         phase: "revealed",
         updatedAt: serverTimestamp()
       }, { merge: true });
+      // ✅ garante o re-render imediato do host (mesmo se nenhuma dica mudar)
+      renderClues();
     }
 
     async function publishToGuess(){
@@ -657,7 +648,64 @@
       await deleteDoc(doc(db, "rooms", room, "clues", clueId));
     }
 
-    // ======= listeners =======
+    // ✅ NOVO: render centralizado (host + jogadores) usando latestClues + currentPhase
+    function renderClues(){
+      // duplicadas
+      const normCount = new Map();
+      latestClues.forEach(it=>{
+        const k = it.clueNorm || normalizeClue(it.clue);
+        normCount.set(k, (normCount.get(k)||0) + 1);
+      });
+      const dups = [...normCount.entries()].filter(([_,v])=>v>1).map(([k])=>k);
+
+      if (role === "host"){
+        hostClueCount.textContent = `${latestClues.length} recebida(s)`;
+        dupHint.textContent = dups.length ? `Duplicadas: ${dups.join(", ")}` : "Sem duplicadas.";
+
+        hostClueList.innerHTML = "";
+        latestClues.forEach(it=>{
+          const key = it.clueNorm || normalizeClue(it.clue);
+          const dup = (normCount.get(key) || 0) > 1;
+
+          const row = document.createElement("div");
+          row.className = "clue";
+
+          const trashBtn = (currentPhase === "revealed")
+            ? `<button class="iconBtn trash" data-del="${it.id}" title="Remover dica">🗑️</button>`
+            : `<span class="small">—</span>`;
+
+          row.innerHTML = `
+            <span>
+              <b>${it.name||"Jogador"}:</b> ${it.clue||""}
+              <span class="small">${dup ? " (duplicada ⚠️)" : ""}</span>
+            </span>
+            <span>${trashBtn}</span>
+          `;
+          hostClueList.appendChild(row);
+        });
+
+        // bind deletes
+        hostClueList.querySelectorAll("button[data-del]").forEach(btn=>{
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-del");
+            await removeClue(id);
+          });
+        });
+      }
+
+      if (role === "clue"){
+        clueClueList.innerHTML = "";
+        if (currentPhase === "collecting") return;
+
+        latestClues.forEach(it=>{
+          const row = document.createElement("div");
+          row.className = "clue";
+          row.innerHTML = `<span><b>${it.name||"Jogador"}:</b> ${it.clue||""}</span><span class="small"></span>`;
+          clueClueList.appendChild(row);
+        });
+      }
+    }
+
     function attachListeners(){
       onSnapshot(roomRef(room), (snap) => {
         if (!snap.exists()) return;
@@ -694,7 +742,7 @@
           if (currentPhase === "collecting"){
             hostPhaseHelp.textContent = "Coletando: dicas chegando. Quando todos enviarem, clique em “Revelar”.";
           } else if (currentPhase === "revealed"){
-            hostPhaseHelp.textContent = "Revelado: todos veem as dicas. Apague as ruins (🗑️) e depois clique em “Enviar pro adivinhador”.";
+            hostPhaseHelp.textContent = "Revelado: agora o 🗑️ aparece. Apague as ruins e depois clique em “Enviar pro adivinhador”.";
           } else {
             hostPhaseHelp.textContent = "Enviado: adivinhador já recebeu. Use “Nova carta” para próxima rodada.";
           }
@@ -735,6 +783,9 @@
             });
           }
         }
+
+        // ✅ MUITO IMPORTANTE: quando a fase muda, re-renderiza as dicas
+        renderClues();
       });
 
       onSnapshot(cluesColRef(room), (snap) => {
@@ -747,63 +798,13 @@
           return ta - tb;
         });
 
-        const normCount = new Map();
-        items.forEach(it=>{
-          const k = it.clueNorm || normalizeClue(it.clue);
-          normCount.set(k, (normCount.get(k)||0) + 1);
-        });
-        const dups = [...normCount.entries()].filter(([_,v])=>v>1).map(([k])=>k);
+        latestClues = items;
 
-        if (role === "host"){
-          hostClueCount.textContent = `${items.length} recebida(s)`;
-          dupHint.textContent = dups.length ? `Duplicadas: ${dups.join(", ")}` : "Sem duplicadas.";
-
-          hostClueList.innerHTML = "";
-          items.forEach(it=>{
-            const key = it.clueNorm || normalizeClue(it.clue);
-            const dup = (normCount.get(key) || 0) > 1;
-
-            const row = document.createElement("div");
-            row.className = "clue";
-
-            const trashBtn = (currentPhase === "revealed")
-              ? `<button class="iconBtn trash" data-del="${it.id}" title="Remover dica">🗑️</button>`
-              : `<span class="small">—</span>`;
-
-            row.innerHTML = `
-              <span>
-                <b>${it.name||"Jogador"}:</b> ${it.clue||""}
-                <span class="small">${dup ? " (duplicada ⚠️)" : ""}</span>
-              </span>
-              <span>${trashBtn}</span>
-            `;
-            hostClueList.appendChild(row);
-          });
-
-          hostClueList.querySelectorAll("button[data-del]").forEach(btn=>{
-            btn.addEventListener("click", async () => {
-              const id = btn.getAttribute("data-del");
-              await removeClue(id);
-            });
-          });
-        }
-
-        if (role === "clue"){
-          clueClueList.innerHTML = "";
-          if (currentPhase === "collecting"){
-            return;
-          }
-          items.forEach(it=>{
-            const row = document.createElement("div");
-            row.className = "clue";
-            row.innerHTML = `<span><b>${it.name||"Jogador"}:</b> ${it.clue||""}</span><span class="small"></span>`;
-            clueClueList.appendChild(row);
-          });
-        }
+        // ✅ MUITO IMPORTANTE: quando as dicas mudam, re-renderiza
+        renderClues();
       });
     }
 
-    // ======= UI =======
     function setupUI(){
       elRoom.textContent = room || "—";
       elMode.textContent = role ? role.toUpperCase() : "—";
@@ -819,7 +820,6 @@
       else helpUI.style.display = "block";
     }
 
-    // ======= events =======
     newRoomBtn?.addEventListener("click", createRoom);
     newCardBtn?.addEventListener("click", nextCard);
     pickBtn?.addEventListener("click", pickTarget);
@@ -828,7 +828,6 @@
     clearCluesBtn?.addEventListener("click", clearClues);
     sendClueBtn?.addEventListener("click", sendClue);
 
-    // ======= init =======
     setupUI();
 
     if (role === "host" && !room){
