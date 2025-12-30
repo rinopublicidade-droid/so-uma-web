@@ -54,6 +54,11 @@
       background:rgba(0,0,0,.18);
       font-weight:800
     }
+    .panel{
+      margin-top:12px;padding:12px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.18)
+    }
     .words{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
     .word{
       padding:12px 14px;border-radius:14px;
@@ -66,11 +71,6 @@
       opacity:.85;font-size:12px;font-weight:1000;
       padding:6px 10px;border-radius:999px;
       border:1px solid rgba(255,255,255,.22);
-      background:rgba(0,0,0,.18)
-    }
-    .panel{
-      margin-top:12px;padding:12px;border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
       background:rgba(0,0,0,.18)
     }
     .clues{display:flex;flex-direction:column;gap:8px;margin-top:10px}
@@ -96,6 +96,11 @@
       font-size:12px; color: rgba(243,246,255,.85);
       user-select:none;
     }
+    .hintBox{
+      padding:10px 12px;border-radius:12px;
+      border:1px dashed rgba(255,255,255,.20);
+      background: rgba(255,255,255,.05);
+    }
   </style>
 </head>
 <body>
@@ -103,9 +108,9 @@
     <div class="card">
       <h1>Só Uma — Multiplayer</h1>
       <p class="sub">
-        <b>Host</b> sorteia a carta e o alvo. Jogadores entram em <b>Dicas</b> (veem o alvo e enviam 1 palavra).
-        Quando todos enviarem, o Host clica <b>Revelar dicas</b>, escolhe quais vão valer e então clica <b>Enviar pro adivinhador</b>.
-        O <b>Adivinhador</b> vê apenas as dicas selecionadas.
+        <b>Host</b> sorteia a carta e o alvo. Jogadores entram em <b>Dicas</b> (veem a carta + o alvo e enviam 1 palavra).
+        O Host clica <b>Revelar dicas</b> pra abrir seleção e depois <b>Enviar pro adivinhador</b>.
+        O <b>Adivinhador</b> vê apenas as dicas publicadas.
       </p>
 
       <div class="row">
@@ -136,53 +141,61 @@
           <div class="panel">
             <div class="row" style="margin:0 0 6px">
               <span class="tag">🃏 Carta</span>
-              <span class="small">As 5 opções (só o Host vê)</span>
+              <span class="small">As 5 opções (Host e Dicas veem)</span>
             </div>
-            <div class="words" id="words"></div>
-            <div class="panel" id="targetBox" style="display:none; margin-top:12px">
-              <div><b>Alvo:</b> <span id="targetWord">—</span> <span class="small">(nº <span id="targetN">—</span>)</span></div>
+            <div class="words" id="hostWords"></div>
+            <div class="panel" id="hostTargetBox" style="display:none; margin-top:12px">
+              <div><b>Alvo:</b> <span id="hostTargetWord">—</span> <span class="small">(nº <span id="hostTargetN">—</span>)</span></div>
+            </div>
+            <div class="hintBox small" style="margin-top:10px">
+              Dica: clique <b>Sortear alvo</b> e só depois deixe a galera mandar as dicas.
             </div>
           </div>
 
           <div class="panel">
             <div class="row" style="margin:0 0 6px">
-              <span class="tag">💬 Dicas</span>
-              <span class="small" id="clueCountText">—</span>
+              <span class="tag">💬 Dicas chegando</span>
+              <span class="small" id="hostClueCount">0 recebida(s)</span>
             </div>
 
-            <div class="small" id="cluesHiddenHint" style="display:none">
-              As dicas ficam <b>ocultas</b> até você clicar em <b>Revelar dicas</b>.
-            </div>
+            <div class="small" id="hostPhaseHelp" style="margin-bottom:10px"></div>
 
             <div class="divider"></div>
 
-            <div id="hostCluesArea">
-              <div class="small" id="hostCluesHelp" style="display:none">
-                Marque as dicas que você quer mandar para o adivinhador e clique em <b>Enviar pro adivinhador</b>.
-              </div>
-              <div class="clues" id="clueList"></div>
-              <div class="small" id="dupHint" style="margin-top:8px"></div>
-              <div class="row" style="margin-top:10px; display:none" id="bulkRow">
-                <button id="selectAllBtn">Marcar todas</button>
-                <button id="unselectAllBtn">Desmarcar todas</button>
-              </div>
+            <div class="row" id="bulkRow" style="display:none; margin-top:0">
+              <button id="selectAllBtn">Marcar todas</button>
+              <button id="unselectAllBtn">Desmarcar todas</button>
             </div>
+
+            <div class="clues" id="hostClueList"></div>
+            <div class="small" id="dupHint" style="margin-top:8px"></div>
           </div>
         </div>
       </div>
 
       <!-- DICAS -->
       <div id="clueUI" style="display:none">
-        <div class="panel">
-          <div class="small">Palavra-alvo (só quem dá dica vê):</div>
-          <div style="font-size:22px;font-weight:1000;text-transform:uppercase;margin-top:6px" id="clueTarget">—</div>
-          <div class="small" style="margin-top:8px">Envie <b>uma palavra</b> como dica:</div>
-          <div class="row">
-            <input id="clueName" placeholder="Seu nome (opcional)" />
-            <input id="clueText" placeholder="Sua dica (1 palavra)" />
-            <button id="sendClueBtn" class="ok">Enviar</button>
+        <div class="grid2">
+          <div class="panel">
+            <div class="row" style="margin:0 0 6px">
+              <span class="tag">🃏 Carta</span>
+              <span class="small">Você vê as 5 opções (não é o adivinhador)</span>
+            </div>
+            <div class="words" id="clueWords"></div>
           </div>
-          <div class="small" id="clueStatus"></div>
+
+          <div class="panel">
+            <div class="small">Palavra-alvo (só quem dá dica vê):</div>
+            <div style="font-size:22px;font-weight:1000;text-transform:uppercase;margin-top:6px" id="clueTarget">—</div>
+
+            <div class="small" style="margin-top:10px">Envie <b>uma palavra</b> como dica:</div>
+            <div class="row">
+              <input id="clueName" placeholder="Seu nome (opcional)" />
+              <input id="clueText" placeholder="Sua dica (1 palavra)" />
+              <button id="sendClueBtn" class="ok">Enviar</button>
+            </div>
+            <div class="small" id="clueStatus"></div>
+          </div>
         </div>
       </div>
 
@@ -223,8 +236,8 @@
       collection, addDoc, serverTimestamp, deleteDoc, getDocs
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    // ======= BARALHO (110 CARTAS ORIGINAIS) =======
-    // Observação: não inclui conteúdo oficial do jogo; são cartas originais no mesmo formato (5 opções).
+    // ======= BARALHO (110 CARTAS) =======
+    // (Cartas originais em formato 5 palavras)
     const DECK = [
       ["SOL","PRAIA","CALOR","VERÃO","BRONZEADO"],
       ["CACHORRO","LATIDO","COLEIRA","OSSO","AMIGO"],
@@ -261,7 +274,7 @@
       ["CHAVE","PORTA","FECHADURA","CADEADO","ENTRADA"],
       ["MERCADO","CARRINHO","OFERTA","CAIXA","CUPOM"],
       ["RECREIO","AMIGO","BRINCADEIRA","CORRERIA","INTERVALO"],
-      ["ESTETOSCÓPIO","EXAME","DIAGNÓSTICO","REMÉDIO","PACIENTE"],
+      ["EXAME","DIAGNÓSTICO","REMÉDIO","PACIENTE","CLÍNICA"],
       ["DIRETOR","CENA","ATOR","TRILHA","OSCAR"],
       ["COLO","CARINHO","PROTEÇÃO","CHORO","SONINHO"],
       ["FOTO","CÂMERA","CLIQUE","ÁLBUM","MEMÓRIA"],
@@ -275,15 +288,15 @@
       ["POÇA","PINGO","ENXURRADA","GOTEIRA","LAMACEIRO"],
       ["ESCRITÓRIO","COMPUTADOR","MESA","ARQUIVO","PLANILHA"],
       ["JANTAR","MESA","CONVERSA","FAMÍLIA","RECEITA"],
-      ["PLANTÃO","EMERGÊNCIA","CUIDADO","ENFERMAGEM","URGENÇA"],
+      ["PLANTÃO","EMERGÊNCIA","CUIDADO","ENFERMAGEM","URGÊNCIA"],
       ["QUEBRA-CABEÇA","PEÇA","MONTAR","PACIÊNCIA","FIGURA"],
       ["BÍBLIA","PALAVRA","ENSINO","GRAÇA","VERDADE"],
       ["DECOLAGEM","ASA","ALTURA","TURBULÊNCIA","POUSO"],
       ["CABELO","ESCOVA","CORTE","ESPELHO","SALÃO"],
       ["SACOLA","LOJA","PROMOÇÃO","VITRINE","DESCONTO"],
       ["LÁPIS","BORRACHA","ESCRITA","CANETA","CADERNO"],
-      ["PISCINA","MERGULHO","FRESCOR","TOLBOGÃ","BOIA"],
-      ["COBERTOR","FRIO","CHOCOLATE","PREGUIÇA","SOPINHA"],
+      ["PISCINA","MERGULHO","FRESCOR","BOIA","DIVERSÃO"],
+      ["COBERTOR","FRIO","CHOCOLATE","PREGUIÇA","SOPA"],
       ["CONVITE","LISTA","ENCONTRO","AMIGOS","MENSAGEM"],
       ["BICICLETA","PEDAL","EQUILÍBRIO","FREIO","CAPACETE"],
       ["QUADRO","EXPLICAÇÃO","AULA","DÚVIDA","APRENDER"],
@@ -292,7 +305,7 @@
       ["CONTROLE","CANAL","VOLUME","SOFÁ","SÉRIE"],
       ["ESTRADA","DESTINO","PARADA","MAPA","CAMINHO"],
       ["FEIRA","BARRACA","FRUTA","SACOLA","TROCA"],
-      ["PRATO","TALHER","SABOR","TEMPER0","APETITE"],
+      ["PRATO","TALHER","SABOR","TEMPERO","APETITE"],
       ["ESTEIRA","CORRIDA","FÔLEGO","META","SUOR"],
       ["MOCHILA","LANCHE","SALA","AMIGO","APRENDER"],
       ["ALIANÇA","UNIÃO","FESTA","VOTOS","CELEBRAÇÃO"],
@@ -304,7 +317,7 @@
       ["ESFORÇO","DEDICAÇÃO","META","EQUIPE","CONQUISTA"],
       ["DESENHO","LÁPIS","COR","CRIATIVIDADE","PAPEL"],
       ["CEIA","UNIÃO","GRATIDÃO","NATAL","FAMÍLIA"],
-      ["RECOMEÇO","PLANOS","FOGO","ABRAÇO","ANO NOVO"],
+      ["RECOMEÇO","PLANOS","FOGOS","ABRAÇO","ANO NOVO"],
       ["DIPLOMA","ORGULHO","FORMATURA","CONQUISTA","FOTO"],
       ["CAMPO","GRAMA","NATUREZA","AR LIVRE","PAZ"],
       ["CARRO","VOLANTE","DIREÇÃO","COMBUSTÍVEL","GARAGEM"],
@@ -321,18 +334,18 @@
       ["BIBLIOTECA","SILÊNCIO","PESQUISA","LEITURA","ESTUDO"],
 
       ["PEGADA","AREIA","CAMINHADA","MAR","PRAIA"],
-      ["PASTEL","CALDO","FILa","FEIRA","TRADIÇÃO"],
+      ["PASTEL","CALDO","FILA","FEIRA","TRADIÇÃO"],
       ["EQUIPE","UNIÃO","SUCESSO","META","TRABALHO"],
       ["PROTEÇÃO","SEGURANÇA","CARINHO","COLO","CRIANÇA"],
       ["INSPIRAÇÃO","ENSINO","FUTURO","PROFESSOR","CUIDADO"],
       ["COMUNIDADE","VIZINHO","BAIRRO","GENTE","CIDADE"],
       ["ENCONTRO","COMUNHÃO","PALAVRA","FÉ","IGREJA"],
       ["LAR","ACONCHEGO","PAZ","CASA","SEGURANÇA"],
-      ["VERDADE","CONVERSA","APOIO","AMIGO","CONFIA"],
+      ["VERDADE","CONVERSA","APOIO","AMIGO","CONFIANÇA"],
       ["HORÁRIO","DISCIPLINA","ROTINA","COMPROMISSO","TRABALHO"],
       ["EDUCAÇÃO","BASE","CONHECIMENTO","FUTURO","ESCOLA"],
       ["ENERGIA","DANÇA","MÚSICA","FESTA","RISADA"],
-      ["CALMA","PAZ","TRÂNSITO","RESPIRA","SILÊNCIO"],
+      ["CALMA","PAZ","RESPIRA","SILÊNCIO","EQUILÍBRIO"],
       ["PERSISTÊNCIA","FORÇA","SUPERAR","DESAFIO","VITÓRIA"],
       ["LUZ","CAMINHO","CONFIANÇA","FÉ","ESPERANÇA"],
       ["VALOR","RECONHECER","OBRIGADO","GRATIDÃO","RESPEITO"],
@@ -340,10 +353,10 @@
       ["ESCOLHAS","TEMPO","VIDA","CAMINHO","APRENDER"],
       ["DIVERSÃO","RISADA","JOGO","AMIGOS","MEMÓRIA"],
 
-      // completa até 110 com temas variados:
+      // completa até 110
       ["TEMPERO","SAL","ALHO","CEBOLA","CHEIRO"],
       ["DOCE","BOLO","CHOCOLATE","BALA","SOBREMESA"],
-      ["SUSTO","GRITO","MEDO","ESCUR0","BARULHO"],
+      ["SUSTO","GRITO","MEDO","ESCURIDÃO","BARULHO"],
       ["VIAGEM","ROTEIRO","FOTO","PASSAGEM","GUIA"],
       ["PAPEL","TESOURA","COLA","ARTE","TRABALHO"],
       ["CACHOEIRA","TRILHA","PEDRA","ÁGUA","NATUREZA"],
@@ -351,24 +364,25 @@
       ["JOGO","DADO","CARTA","TABULEIRO","SORTE"],
       ["FOTO","SELFIE","POSE","FILTRO","CURTIDA"],
       ["CHAVEIRO","BOLSO","CHAVE","PERDER","ENCONTRAR"],
-      ["ENVELOPE","CARTA","CORREIO","SEL0","MENSAGEM"],
+      ["ENVELOPE","CARTA","CORREIO","SELO","MENSAGEM"],
       ["CHUVEIRO","BANHO","TOALHA","XAMPU","ESPUMA"],
-      ["MALA","ZÍPER","ROUPA","DOBRAR","PESA"],
+      ["MALA","ZÍPER","ROUPA","DOBRAR","PESAR"],
       ["AEROPORTO","CHECK-IN","PORTÃO","FILA","EMBARQUE"],
       ["SALA","VENTILADOR","CALOR","AR-CONDICIONADO","JANELA"],
       ["COZINHA","PRATO","PIA","ESPONJA","LOUÇA"],
       ["PIPOCA","MILHO","SAL","MANTEIGA","BALDE"],
       ["PRAIA","CONCHA","CASTELO","AREIA","CRIANÇA"],
       ["CHAPÉU","BONÉ","CABEÇA","SOL","SOMBRA"],
-      ["CAMISA","BOTÃO","GOLA","MANGA","ESTAMPa"],
+      ["CAMISA","BOTÃO","GOLA","MANGA","ESTAMPA"],
       ["SAPATO","CADARÇO","MEIA","PÉ","CONFORTO"],
     ];
 
-    // ======= ELEMENTOS / UI =======
+    // ======= URL / ROLE =======
     const qs = new URLSearchParams(location.search);
     const role = (qs.get("role") || "").toLowerCase(); // host | clue | guess
     const roomParam = (qs.get("room") || "").toUpperCase();
 
+    // ======= UI refs =======
     const elMode = document.getElementById("mode");
     const elRoom = document.getElementById("room");
     const elRound = document.getElementById("round");
@@ -379,30 +393,31 @@
     const guessUI = document.getElementById("guessUI");
     const helpUI = document.getElementById("helpUI");
 
-    const elWords = document.getElementById("words");
-    const elTargetBox = document.getElementById("targetBox");
-    const elTargetWord = document.getElementById("targetWord");
-    const elTargetN = document.getElementById("targetN");
+    const hostWords = document.getElementById("hostWords");
+    const clueWords = document.getElementById("clueWords");
+
+    const hostTargetBox = document.getElementById("hostTargetBox");
+    const hostTargetWord = document.getElementById("hostTargetWord");
+    const hostTargetN = document.getElementById("hostTargetN");
 
     const linkClue = document.getElementById("linkClue");
     const linkGuess = document.getElementById("linkGuess");
 
-    const clueList = document.getElementById("clueList");
+    const hostClueCount = document.getElementById("hostClueCount");
+    const hostPhaseHelp = document.getElementById("hostPhaseHelp");
+    const hostClueList = document.getElementById("hostClueList");
     const dupHint = document.getElementById("dupHint");
-    const clueCountText = document.getElementById("clueCountText");
-    const cluesHiddenHint = document.getElementById("cluesHiddenHint");
-    const hostCluesHelp = document.getElementById("hostCluesHelp");
     const bulkRow = document.getElementById("bulkRow");
     const selectAllBtn = document.getElementById("selectAllBtn");
     const unselectAllBtn = document.getElementById("unselectAllBtn");
-
-    const guessWait = document.getElementById("guessWait");
-    const guessClueList = document.getElementById("guessClueList");
 
     const clueTarget = document.getElementById("clueTarget");
     const clueName = document.getElementById("clueName");
     const clueText = document.getElementById("clueText");
     const clueStatus = document.getElementById("clueStatus");
+
+    const guessWait = document.getElementById("guessWait");
+    const guessClueList = document.getElementById("guessClueList");
 
     const newRoomBtn = document.getElementById("newRoomBtn");
     const newCardBtn = document.getElementById("newCardBtn");
@@ -412,6 +427,7 @@
     const clearCluesBtn = document.getElementById("clearCluesBtn");
     const sendClueBtn = document.getElementById("sendClueBtn");
 
+    // ======= helpers =======
     function fisherYates(arr){
       const a = arr.slice();
       for (let i=a.length-1;i>0;i--){
@@ -428,37 +444,37 @@
     }
     function baseUrl(){ return location.origin + location.pathname; }
     function makeLink(r, rm){ return `${baseUrl()}?role=${r}&room=${rm}`; }
-
-    function renderWords(words){
-      elWords.innerHTML = "";
-      (words || []).forEach((w,i)=>{
-        const div = document.createElement("div");
-        div.className = "word";
-        div.innerHTML = `<span>${w}</span><span class="idx">${i+1}</span>`;
-        elWords.appendChild(div);
-      });
-    }
     function normalizeClue(s){ return (s||"").trim().toLowerCase(); }
 
     function phaseName(p){
       if (p === "collecting") return "Coletando";
       if (p === "revealed") return "Revelado (seleção)";
-      if (p === "published") return "Enviado ao adivinhador";
+      if (p === "published") return "Publicado";
       return p || "—";
     }
 
-    // ======= FIREBASE INIT =======
+    function renderWords(container, words){
+      container.innerHTML = "";
+      (words || []).forEach((w,i)=>{
+        const div = document.createElement("div");
+        div.className = "word";
+        div.innerHTML = `<span>${w}</span><span class="idx">${i+1}</span>`;
+        container.appendChild(div);
+      });
+    }
+
+    // ======= Firebase =======
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ======= FIRESTORE REFS =======
     function roomRef(rm){ return doc(db, "rooms", rm); }
     function cluesColRef(rm){ return collection(db, "rooms", rm, "clues"); }
 
-    // ======= ESTADO =======
+    // ======= state =======
     let room = roomParam || "";
+    let currentPhase = "collecting"; // atualizado pelo room snapshot
 
-    // ======= ACTIONS =======
+    // ======= actions =======
     async function createRoom(){
       room = code4();
       const deckOrder = fisherYates([...DECK.keys()]);
@@ -512,16 +528,15 @@
         round: (data.round || 1) + 1,
         card: DECK[cardIdx],
         cardIndex: cardIdx,
-        targetN: null,
-        targetWord: null,
         deckOrder: order,
         deckPos: pos,
+        targetN: null,
+        targetWord: null,
         phase: "collecting",
         publishedClues: [],
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      // limpa as dicas ao iniciar nova rodada (pra ficar prático)
       await clearClues();
     }
 
@@ -547,11 +562,8 @@
       const txt = (clueText.value || "").trim();
       if (!txt) { clueStatus.textContent = "Digite sua dica."; return; }
 
-      const roomSnap = await getDoc(roomRef(room));
-      if (!roomSnap.exists()) return;
-      const roomData = roomSnap.data();
-
-      if (roomData.phase !== "collecting"){
+      // trava se não estiver coletando
+      if (currentPhase !== "collecting"){
         clueStatus.textContent = "Rodada fechada pelo host. Aguarde a próxima carta.";
         return;
       }
@@ -579,14 +591,20 @@
     }
 
     async function publishSelectedClues(){
-      // pega ids marcados
+      // ids marcados
       const checks = document.querySelectorAll('input[data-clue-id]');
-      const selectedIds = [];
+      let selectedIds = [];
       checks.forEach(ch => { if (ch.checked) selectedIds.push(ch.getAttribute("data-clue-id")); });
 
+      // lê as dicas atuais
       const snap = await getDocs(cluesColRef(room));
       const all = [];
       snap.forEach(d => all.push({ id:d.id, ...d.data() }));
+
+      // se não marcou nada, publica todas
+      if (selectedIds.length === 0){
+        selectedIds = all.map(it => it.id);
+      }
 
       const selected = all
         .filter(it => selectedIds.includes(it.id))
@@ -603,17 +621,18 @@
       }, { merge: true });
     }
 
-    // ======= REALTIME LISTENERS =======
+    // ======= listeners =======
     function attachListeners(){
-      // room snapshot
+      // room changes
       onSnapshot(roomRef(room), (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
 
-        const phase = data.phase || "collecting";
+        currentPhase = data.phase || "collecting";
+
         elRoom.textContent = room;
         elRound.textContent = String(data.round ?? "—");
-        elPhaseLabel.textContent = phaseName(phase);
+        elPhaseLabel.textContent = phaseName(currentPhase);
 
         linkClue.textContent = makeLink("clue", room);
         linkGuess.textContent = makeLink("guess", room);
@@ -623,49 +642,50 @@
         const tw = data.targetWord;
         const published = Array.isArray(data.publishedClues) ? data.publishedClues : [];
 
+        // Host vê carta + alvo
         if (role === "host"){
-          renderWords(card);
-
+          renderWords(hostWords, card);
           if (tw){
-            elTargetBox.style.display = "block";
-            elTargetWord.textContent = tw;
-            elTargetN.textContent = String(tn);
+            hostTargetBox.style.display = "block";
+            hostTargetWord.textContent = tw;
+            hostTargetN.textContent = String(tn);
           } else {
-            elTargetBox.style.display = "none";
+            hostTargetBox.style.display = "none";
           }
 
-          // botões por fase
-          revealCluesBtn.disabled = (phase !== "collecting");
-          publishCluesBtn.disabled = (phase === "collecting");
+          revealCluesBtn.disabled = (currentPhase !== "collecting");
+          publishCluesBtn.disabled = (currentPhase !== "revealed");
+          bulkRow.style.display = (currentPhase === "revealed") ? "flex" : "none";
 
-          // dica do host: se fase coletando, ocultar lista
-          const showClues = (phase === "revealed" || phase === "published");
-          cluesHiddenHint.style.display = showClues ? "none" : "block";
-          hostCluesHelp.style.display = (phase === "revealed") ? "block" : "none";
-          bulkRow.style.display = (phase === "revealed") ? "flex" : "none";
-
-          // se já publicou, pode manter checkboxes visíveis mas travados
-          const lockChecks = (phase === "published");
-          const checkEls = document.querySelectorAll('input[data-clue-id]');
-          checkEls.forEach(ch => ch.disabled = lockChecks);
-
-          // (só pra feedback rápido) quantidade publicada
-          if (phase === "published"){
-            // nada visual extra obrigatório
+          if (currentPhase === "collecting"){
+            hostPhaseHelp.textContent = "Fase de coleta: as dicas chegam abaixo. Quando estiver pronto, clique em “Revelar dicas” para selecionar.";
+          } else if (currentPhase === "revealed"){
+            hostPhaseHelp.textContent = "Fase revelada: marque as dicas que quer enviar (ou envie sem marcar para mandar todas).";
+          } else {
+            hostPhaseHelp.textContent = "Publicado: o adivinhador já está vendo as dicas selecionadas.";
           }
         }
 
+        // Jogador de dica vê carta + alvo
         if (role === "clue"){
+          renderWords(clueWords, card);
           clueTarget.textContent = tw ? tw : "Aguardando alvo…";
 
-          const locked = (phase !== "collecting");
+          const locked = (currentPhase !== "collecting");
           sendClueBtn.disabled = locked;
           clueText.disabled = locked;
           clueName.disabled = locked;
-          if (locked) clueStatus.textContent = "Rodada fechada. Aguarde a próxima carta.";
-          else clueStatus.textContent = "";
+
+          if (locked){
+            clueStatus.textContent = (currentPhase === "published")
+              ? "Host já enviou as dicas ao adivinhador. Aguarde a próxima carta."
+              : "Host está selecionando as dicas. Aguarde…";
+          } else {
+            clueStatus.textContent = "";
+          }
         }
 
+        // Adivinhador vê só publicadas
         if (role === "guess"){
           guessClueList.innerHTML = "";
           if (!published.length){
@@ -682,41 +702,32 @@
         }
       });
 
-      // clues snapshot (host vê contagem sempre; lista só aparece após revelar)
+      // clues changes (tempo real)
       onSnapshot(cluesColRef(room), (snap) => {
         const items = [];
         snap.forEach(d => items.push({ id:d.id, ...d.data() }));
 
+        // ordena (melhor esforço)
         items.sort((a,b)=>{
           const ta = a.createdAt?.seconds || 0;
           const tb = b.createdAt?.seconds || 0;
           return ta - tb;
         });
 
-        // contagem sempre
-        clueCountText.textContent = `${items.length} recebida(s)`;
+        if (role === "host"){
+          hostClueCount.textContent = `${items.length} recebida(s)`;
 
-        if (role !== "host") return;
-
-        // Descobre fase atual (para decidir se lista aparece)
-        getDoc(roomRef(room)).then(roomSnap => {
-          if (!roomSnap.exists()) return;
-          const phase = (roomSnap.data().phase || "collecting");
-
-          const showClues = (phase === "revealed" || phase === "published");
-          clueList.innerHTML = "";
-          dupHint.textContent = "";
-
-          if (!showClues){
-            // não renderiza dicas na fase de coleta
-            return;
-          }
-
+          // contagem duplicadas
           const normCount = new Map();
           items.forEach(it=>{
             const k = it.clueNorm || normalizeClue(it.clue);
             normCount.set(k, (normCount.get(k)||0) + 1);
           });
+          const dups = [...normCount.entries()].filter(([_,v])=>v>1).map(([k])=>k);
+          dupHint.textContent = dups.length ? `Duplicadas: ${dups.join(", ")}` : "Sem duplicadas.";
+
+          // renderiza lista sempre; checkbox só na fase revealed
+          hostClueList.innerHTML = "";
 
           items.forEach(it=>{
             const key = it.clueNorm || normalizeClue(it.clue);
@@ -725,22 +736,21 @@
             const row = document.createElement("div");
             row.className = "clue";
 
-            const disabled = (phase === "published") ? "disabled" : "";
+            const showCheckbox = (currentPhase === "revealed");
+            const checkboxHtml = showCheckbox
+              ? `<input type="checkbox" data-clue-id="${it.id}" title="Marque para enviar ao adivinhador" />`
+              : `<span class="small">${currentPhase === "collecting" ? "—" : ""}</span>`;
+
             row.innerHTML = `
               <span>
                 <b>${it.name||"Jogador"}:</b> ${it.clue||""}
                 <span class="small">${dup ? " (duplicada ⚠️)" : ""}</span>
               </span>
-              <span>
-                <input type="checkbox" data-clue-id="${it.id}" title="Marque para enviar ao adivinhador" ${disabled} />
-              </span>
+              <span>${checkboxHtml}</span>
             `;
-            clueList.appendChild(row);
+            hostClueList.appendChild(row);
           });
-
-          const dups = [...normCount.entries()].filter(([_,v])=>v>1).map(([k])=>k);
-          dupHint.textContent = dups.length ? `Duplicadas: ${dups.join(", ")}` : "Sem duplicadas.";
-        });
+        }
       });
     }
 
@@ -760,23 +770,23 @@
       else helpUI.style.display = "block";
     }
 
-    // ======= EVENTOS =======
-    newRoomBtn.addEventListener("click", createRoom);
-    newCardBtn.addEventListener("click", nextCard);
-    pickBtn.addEventListener("click", pickTarget);
-    revealCluesBtn.addEventListener("click", revealClues);
-    publishCluesBtn.addEventListener("click", publishSelectedClues);
-    clearCluesBtn.addEventListener("click", clearClues);
-    if (sendClueBtn) sendClueBtn.addEventListener("click", sendClue);
+    // ======= events =======
+    newRoomBtn?.addEventListener("click", createRoom);
+    newCardBtn?.addEventListener("click", nextCard);
+    pickBtn?.addEventListener("click", pickTarget);
+    revealCluesBtn?.addEventListener("click", revealClues);
+    publishCluesBtn?.addEventListener("click", publishSelectedClues);
+    clearCluesBtn?.addEventListener("click", clearClues);
+    sendClueBtn?.addEventListener("click", sendClue);
 
-    selectAllBtn.addEventListener("click", () => {
-      document.querySelectorAll('input[data-clue-id]').forEach(ch => { if (!ch.disabled) ch.checked = true; });
+    selectAllBtn?.addEventListener("click", () => {
+      document.querySelectorAll('input[data-clue-id]').forEach(ch => { ch.checked = true; });
     });
-    unselectAllBtn.addEventListener("click", () => {
-      document.querySelectorAll('input[data-clue-id]').forEach(ch => { if (!ch.disabled) ch.checked = false; });
+    unselectAllBtn?.addEventListener("click", () => {
+      document.querySelectorAll('input[data-clue-id]').forEach(ch => { ch.checked = false; });
     });
 
-    // ======= INIT =======
+    // ======= init =======
     setupUI();
 
     if (role === "host" && !room){
