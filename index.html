@@ -152,6 +152,15 @@
       border:1px dashed rgba(255,255,255,.20);
       background: rgba(255,255,255,.05);
     }
+    .toast{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.22);
+      display:none;
+    }
+    .toast.show{display:block}
   </style>
 </head>
 <body>
@@ -160,7 +169,7 @@
       <h1>Só Uma — Multiplayer</h1>
       <p class="sub">
         Fase 1: jogadores enviam dicas. • Fase 2: Host clica <b>Revelar</b> e todos veem as dicas.
-        • Host remove as dicas ruins. • Host clica <b>Enviar pro adivinhador</b>.
+        • Host remove as dicas ruins (🗑️). • Host clica <b>Enviar pro adivinhador</b>.
       </p>
 
       <div class="row">
@@ -168,7 +177,10 @@
         <span class="pill">Sala: <b id="room">—</b></span>
         <span class="pill">Rodada: <b id="round">—</b></span>
         <span class="pill">Fase: <b id="phaseLabel">—</b></span>
+        <span class="pill">UID: <b id="uidLabel">—</b></span>
       </div>
+
+      <div id="toast" class="toast"></div>
 
       <!-- HOST -->
       <div id="hostUI" style="display:none">
@@ -269,6 +281,7 @@
   </div>
 
   <script type="module">
+    // ======= FIREBASE CONFIG (SEU) =======
     const firebaseConfig = {
       apiKey: "AIzaSyBnFKG9BmzKV4zWcSaZ59qiEaSX6rRwAuo",
       authDomain: "so-uma-game.firebaseapp.com",
@@ -279,6 +292,7 @@
     };
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import {
       getFirestore, doc, setDoc, getDoc, onSnapshot,
       collection, addDoc, serverTimestamp, deleteDoc, getDocs
@@ -352,8 +366,8 @@
       ["FEIRA","BARRACA","FRUTA","SACOLA","TROCA"],
       ["PRATO","TALHER","SABOR","TEMPERO","APETITE"],
       ["ESTEIRA","CORRIDA","FÔLEGO","META","SUOR"],
-      ["MOCHILA","LANCHE","SALA","AMIGO","ESCOLA"],
-      ["ALIANÇA","UNIÃO","FESTA","VOTO","CELEBRAÇÃO"],
+      ["MOCHILA","LANCHE","SALA","AMIGO","APRENDER"],
+      ["ALIANÇA","UNIÃO","FESTA","VOTOS","CELEBRAÇÃO"],
       ["VÍDEO","CURTIDA","COMENTÁRIO","TREND","COMPARTILHAR"],
       ["FAROL","SINAL","PARADA","SETAS","PRUDÊNCIA"],
       ["ARROZ","FEIJÃO","CASEIRO","ALMOÇO","PRATO"],
@@ -368,7 +382,7 @@
       ["CARRO","VOLANTE","DIREÇÃO","COMBUSTÍVEL","GARAGEM"],
       ["PASSEIO","GUIA","RUÍDO","ALEGRIA","CACHORRO"],
       ["MIAU","SOFÁ","ARRANHADOR","BIGODE","PREGUIÇA"],
-      ["GRELHA","CARNE","CARVÃO","PARENTE","CHURRASCO"],
+      ["GRELHA","CARNE","CARVÃO","AMIGOS","CHURRASCO"],
       ["GRUPO","UNIÃO","PARCERIA","AMIZADE","ESCOLA"],
       ["EMPATIA","RESPEITO","ATENÇÃO","CUIDADO","GENTILEZA"],
       ["PARQUE","ÁRVORE","BANCO","CAMINHADA","LAZER"],
@@ -390,11 +404,11 @@
       ["EDUCAÇÃO","BASE","CONHECIMENTO","FUTURO","ESCOLA"],
       ["ENERGIA","DANÇA","MÚSICA","FESTA","RISADA"],
       ["CALMA","PAZ","RESPIRA","SILÊNCIO","EQUILÍBRIO"],
-      ["PERSISTÊNCIA","FORÇA","SUPERAÇÃO","DESAFIO","VITÓRIA"],
+      ["PERSISTÊNCIA","FORÇA","SUPERAR","DESAFIO","VITÓRIA"],
       ["LUZ","CAMINHO","CONFIANÇA","FÉ","ESPERANÇA"],
-      ["VALOR","RECONHECIMENTO","OBRIGADO","GRATIDÃO","RESPEITO"],
+      ["VALOR","RECONHECER","OBRIGADO","GRATIDÃO","RESPEITO"],
       ["SONHO","PLANO","DEDICAÇÃO","FUTURO","CONQUISTA"],
-      ["ESCOLHA","TEMPO","VIDA","CAMINHO","MORTE"],
+      ["ESCOLHAS","TEMPO","VIDA","CAMINHO","APRENDER"],
       ["DIVERSÃO","RISADA","JOGO","AMIGOS","MEMÓRIA"],
       ["TEMPERO","SAL","ALHO","CEBOLA","CHEIRO"],
       ["DOCE","BOLO","CHOCOLATE","BALA","SOBREMESA"],
@@ -402,10 +416,10 @@
       ["VIAGEM","ROTEIRO","FOTO","PASSAGEM","GUIA"],
       ["PAPEL","TESOURA","COLA","ARTE","TRABALHO"],
       ["CACHOEIRA","TRILHA","PEDRA","ÁGUA","NATUREZA"],
-      ["SHOW","PALCO","LUSTRE","MULTIDÃO","CANTO"],
+      ["SHOW","PALCO","LUZES","MULTIDÃO","CANTO"],
       ["JOGO","DADO","CARTA","TABULEIRO","SORTE"],
       ["FOTO","SELFIE","POSE","FILTRO","CURTIDA"],
-      ["CHAVEIRO","BOLSO","CHAVE","SENHA","CÓDIGO"],
+      ["CHAVEIRO","BOLSO","CHAVE","PERDER","ENCONTRAR"],
       ["ENVELOPE","CARTA","CORREIO","SELO","MENSAGEM"],
       ["CHUVEIRO","BANHO","TOALHA","XAMPU","ESPUMA"],
       ["MALA","ZÍPER","ROUPA","DOBRAR","PESAR"],
@@ -419,14 +433,25 @@
       ["SAPATO","CADARÇO","MEIA","PÉ","CONFORTO"],
     ];
 
+    // ======= URL / ROLE =======
     const qs = new URLSearchParams(location.search);
-    const role = (qs.get("role") || "").toLowerCase();
+    const role = (qs.get("role") || "").toLowerCase(); // host | clue | guess
     const roomParam = (qs.get("room") || "").toUpperCase();
 
+    // ======= UI =======
     const elMode = document.getElementById("mode");
     const elRoom = document.getElementById("room");
     const elRound = document.getElementById("round");
     const elPhaseLabel = document.getElementById("phaseLabel");
+    const uidLabel = document.getElementById("uidLabel");
+
+    const toast = document.getElementById("toast");
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=>toast.classList.remove("show"), 4200);
+    }
 
     const hostUI = document.getElementById("hostUI");
     const clueUI = document.getElementById("clueUI");
@@ -466,6 +491,7 @@
     const clearCluesBtn = document.getElementById("clearCluesBtn");
     const sendClueBtn = document.getElementById("sendClueBtn");
 
+    // ======= helpers =======
     function fisherYates(arr){
       const a = arr.slice();
       for (let i=a.length-1;i>0;i--){
@@ -483,12 +509,14 @@
     function baseUrl(){ return location.origin + location.pathname; }
     function makeLink(r, rm){ return `${baseUrl()}?role=${r}&room=${rm}`; }
     function normalizeClue(s){ return (s||"").trim().toLowerCase(); }
+
     function phaseName(p){
       if (p === "collecting") return "Coletando";
       if (p === "revealed") return "Revelado";
       if (p === "published") return "Enviado";
       return p || "—";
     }
+
     function renderWords(container, words){
       container.innerHTML = "";
       (words || []).forEach((w,i)=>{
@@ -499,98 +527,159 @@
       });
     }
 
+    // ======= Firebase init + Auth anônima =======
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
+
+    async function ensureAnonAuth(){
+      try{
+        await signInAnonymously(auth);
+      } catch(e){
+        // Se falhar, ainda tentamos seguir, mas a maioria das rules vai bloquear.
+        console.error(e);
+        showToast("Falha ao autenticar (Anonymous). Verifique Authentication → Anonymous.");
+      }
+    }
+    await ensureAnonAuth();
+
+    onAuthStateChanged(auth, (user)=>{
+      if (user) uidLabel.textContent = user.uid.slice(0,8) + "…";
+      else uidLabel.textContent = "—";
+    });
 
     function roomRef(rm){ return doc(db, "rooms", rm); }
     function cluesColRef(rm){ return collection(db, "rooms", rm, "clues"); }
 
+    // ======= state =======
     let room = roomParam || "";
     let currentPhase = "collecting";
-
-    // ✅ NOVO: guardamos as dicas para re-renderizar quando a fase mudar
     let latestClues = [];
 
+    // ======= UI control =======
+    function setupUI(){
+      elRoom.textContent = room || "—";
+      elMode.textContent = role ? role.toUpperCase() : "—";
+
+      hostUI.style.display = "none";
+      clueUI.style.display = "none";
+      guessUI.style.display = "none";
+      helpUI.style.display = "none";
+
+      if (role === "host") hostUI.style.display = "block";
+      else if (role === "clue") clueUI.style.display = "block";
+      else if (role === "guess") guessUI.style.display = "block";
+      else helpUI.style.display = "block";
+    }
+
+    // ======= actions =======
     async function createRoom(){
-      room = code4();
-      const deckOrder = fisherYates([...DECK.keys()]);
-      const deckPos = 0;
-      const firstIdx = deckOrder[deckPos];
+      try{
+        room = code4();
+        const deckOrder = fisherYates([...DECK.keys()]);
+        const deckPos = 0;
+        const firstIdx = deckOrder[deckPos];
 
-      await setDoc(roomRef(room), {
-        room,
-        round: 1,
-        card: DECK[firstIdx],
-        cardIndex: firstIdx,
-        targetN: null,
-        targetWord: null,
-        deckOrder,
-        deckPos,
-        phase: "collecting",
-        publishedClues: [],
-        updatedAt: serverTimestamp()
-      });
+        await setDoc(roomRef(room), {
+          room,
+          hostUid: auth.currentUser.uid,   // ✅ necessário para rules fortes
+          round: 1,
+          card: DECK[firstIdx],
+          cardIndex: firstIdx,
+          targetN: null,
+          targetWord: null,
+          deckOrder,
+          deckPos,
+          phase: "collecting",
+          publishedClues: [],
+          updatedAt: serverTimestamp()
+        });
 
-      history.replaceState(null, "", makeLink("host", room));
-      setupUI();
-      attachListeners();
+        history.replaceState(null, "", makeLink("host", room));
+        setupUI();
+        attachListeners();
+        showToast("Sala criada ✅");
+      } catch(e){
+        console.error(e);
+        showToast("Não consegui criar a sala. Verifique as Rules e o Anonymous Auth.");
+      }
     }
 
     async function clearClues(){
-      if (!room) return;
-      const col = cluesColRef(room);
-      const all = await getDocs(col);
-      await Promise.all(all.docs.map(d => deleteDoc(d.ref)));
+      try{
+        if (!room) return;
+        const col = cluesColRef(room);
+        const all = await getDocs(col);
+        await Promise.all(all.docs.map(d => deleteDoc(d.ref)));
 
-      await setDoc(roomRef(room), {
-        phase: "collecting",
-        publishedClues: [],
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+        await setDoc(roomRef(room), {
+          phase: "collecting",
+          publishedClues: [],
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        showToast("Dicas limpas ✅");
+      } catch(e){
+        console.error(e);
+        showToast("Sem permissão para limpar dicas (provável Rules).");
+      }
     }
 
     async function nextCard(){
-      const snap = await getDoc(roomRef(room));
-      if (!snap.exists()) return;
+      try{
+        const snap = await getDoc(roomRef(room));
+        if (!snap.exists()) return;
 
-      const data = snap.data();
-      const order = Array.isArray(data.deckOrder) ? data.deckOrder : fisherYates([...DECK.keys()]);
-      let pos = Number.isFinite(data.deckPos) ? data.deckPos : 0;
+        const data = snap.data();
+        const order = Array.isArray(data.deckOrder) ? data.deckOrder : fisherYates([...DECK.keys()]);
+        let pos = Number.isFinite(data.deckPos) ? data.deckPos : 0;
 
-      pos = (pos + 1) % order.length;
-      const cardIdx = order[pos];
+        pos = (pos + 1) % order.length;
+        const cardIdx = order[pos];
 
-      await setDoc(roomRef(room), {
-        round: (data.round || 1) + 1,
-        card: DECK[cardIdx],
-        cardIndex: cardIdx,
-        deckOrder: order,
-        deckPos: pos,
-        targetN: null,
-        targetWord: null,
-        phase: "collecting",
-        publishedClues: [],
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+        await setDoc(roomRef(room), {
+          round: (data.round || 1) + 1,
+          card: DECK[cardIdx],
+          cardIndex: cardIdx,
+          deckOrder: order,
+          deckPos: pos,
+          targetN: null,
+          targetWord: null,
+          phase: "collecting",
+          publishedClues: [],
+          updatedAt: serverTimestamp()
+        }, { merge: true });
 
-      await clearClues();
+        await clearClues();
+        showToast("Nova carta ✅");
+      } catch(e){
+        console.error(e);
+        showToast("Sem permissão para trocar a carta (provável Rules).");
+      }
     }
 
     async function pickTarget(){
-      const snap = await getDoc(roomRef(room));
-      if (!snap.exists()) return;
-      const data = snap.data();
-      const card = data.card;
-      if (!Array.isArray(card) || card.length !== 5) return;
+      try{
+        const snap = await getDoc(roomRef(room));
+        if (!snap.exists()) return;
+        const data = snap.data();
+        const card = data.card;
+        if (!Array.isArray(card) || card.length !== 5) return;
 
-      const n = Math.floor(Math.random()*5)+1;
-      const tw = card[n-1];
+        const n = Math.floor(Math.random()*5)+1;
+        const tw = card[n-1];
 
-      await setDoc(roomRef(room), {
-        targetN: n,
-        targetWord: tw,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+        await setDoc(roomRef(room), {
+          targetN: n,
+          targetWord: tw,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        showToast("Alvo sorteado ✅");
+      } catch(e){
+        console.error(e);
+        showToast("Sem permissão para sortear alvo (provável Rules).");
+      }
     }
 
     async function sendClue(){
@@ -603,54 +692,77 @@
         return;
       }
 
-      const oneWord = txt.split(/\s+/)[0];
+      try{
+        const oneWord = txt.split(/\s+/)[0];
 
-      await addDoc(cluesColRef(room), {
-        name: name || "Jogador",
-        clue: oneWord,
-        clueNorm: normalizeClue(oneWord),
-        createdAt: serverTimestamp()
-      });
+        await addDoc(cluesColRef(room), {
+          name: name || "Jogador",
+          clue: oneWord,
+          clueNorm: normalizeClue(oneWord),
+          createdAt: serverTimestamp()
+        });
 
-      clueText.value = "";
-      clueStatus.textContent = "Dica enviada ✅";
-      setTimeout(()=>clueStatus.textContent="", 1400);
+        clueText.value = "";
+        clueStatus.textContent = "Dica enviada ✅";
+        setTimeout(()=>clueStatus.textContent="", 1400);
+      } catch(e){
+        console.error(e);
+        clueStatus.textContent = "Sem permissão para enviar dica (Rules/phase).";
+      }
     }
 
     async function revealClues(){
-      await setDoc(roomRef(room), {
-        phase: "revealed",
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      // ✅ garante o re-render imediato do host (mesmo se nenhuma dica mudar)
-      renderClues();
+      try{
+        await setDoc(roomRef(room), {
+          phase: "revealed",
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        renderClues();
+        showToast("Dicas reveladas ✅");
+      } catch(e){
+        console.error(e);
+        showToast("Sem permissão para revelar (provável Rules).");
+      }
     }
 
     async function publishToGuess(){
-      const snap = await getDocs(cluesColRef(room));
-      const all = [];
-      snap.forEach(d => all.push({ id:d.id, ...d.data() }));
+      try{
+        const snap = await getDocs(cluesColRef(room));
+        const all = [];
+        snap.forEach(d => all.push({ id:d.id, ...d.data() }));
 
-      const payload = all.map(it => ({
-        name: it.name || "Jogador",
-        clue: it.clue || "",
-        clueNorm: it.clueNorm || normalizeClue(it.clue)
-      }));
+        const payload = all.map(it => ({
+          name: it.name || "Jogador",
+          clue: it.clue || "",
+          clueNorm: it.clueNorm || normalizeClue(it.clue)
+        }));
 
-      await setDoc(roomRef(room), {
-        phase: "published",
-        publishedClues: payload,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+        await setDoc(roomRef(room), {
+          phase: "published",
+          publishedClues: payload,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        showToast("Enviado ao adivinhador ✅");
+      } catch(e){
+        console.error(e);
+        showToast("Sem permissão para enviar ao adivinhador (provável Rules).");
+      }
     }
 
     async function removeClue(clueId){
-      await deleteDoc(doc(db, "rooms", room, "clues", clueId));
+      try{
+        await deleteDoc(doc(db, "rooms", room, "clues", clueId));
+        showToast("Dica removida ✅");
+      } catch(e){
+        console.error(e);
+        showToast("Sem permissão para apagar dica (Rules: só o host).");
+      }
     }
 
-    // ✅ NOVO: render centralizado (host + jogadores) usando latestClues + currentPhase
+    // ======= render centralizado de dicas =======
     function renderClues(){
-      // duplicadas
       const normCount = new Map();
       latestClues.forEach(it=>{
         const k = it.clueNorm || normalizeClue(it.clue);
@@ -684,7 +796,6 @@
           hostClueList.appendChild(row);
         });
 
-        // bind deletes
         hostClueList.querySelectorAll("button[data-del]").forEach(btn=>{
           btn.addEventListener("click", async () => {
             const id = btn.getAttribute("data-del");
@@ -706,6 +817,7 @@
       }
     }
 
+    // ======= listeners =======
     function attachListeners(){
       onSnapshot(roomRef(room), (snap) => {
         if (!snap.exists()) return;
@@ -784,8 +896,10 @@
           }
         }
 
-        // ✅ MUITO IMPORTANTE: quando a fase muda, re-renderiza as dicas
         renderClues();
+      }, (err)=>{
+        console.error(err);
+        showToast("Sem permissão (Firestore). Confirme Rules + Anonymous Auth.");
       });
 
       onSnapshot(cluesColRef(room), (snap) => {
@@ -799,27 +913,14 @@
         });
 
         latestClues = items;
-
-        // ✅ MUITO IMPORTANTE: quando as dicas mudam, re-renderiza
         renderClues();
+      }, (err)=>{
+        console.error(err);
+        showToast("Não consegui ler as dicas (Rules/phase).");
       });
     }
 
-    function setupUI(){
-      elRoom.textContent = room || "—";
-      elMode.textContent = role ? role.toUpperCase() : "—";
-
-      hostUI.style.display = "none";
-      clueUI.style.display = "none";
-      guessUI.style.display = "none";
-      helpUI.style.display = "none";
-
-      if (role === "host") hostUI.style.display = "block";
-      else if (role === "clue") clueUI.style.display = "block";
-      else if (role === "guess") guessUI.style.display = "block";
-      else helpUI.style.display = "block";
-    }
-
+    // ======= events =======
     newRoomBtn?.addEventListener("click", createRoom);
     newCardBtn?.addEventListener("click", nextCard);
     pickBtn?.addEventListener("click", pickTarget);
@@ -828,8 +929,10 @@
     clearCluesBtn?.addEventListener("click", clearClues);
     sendClueBtn?.addEventListener("click", sendClue);
 
+    // ======= init =======
     setupUI();
 
+    // Se o host abriu sem room, cria. Se abriu com room, conecta.
     if (role === "host" && !room){
       await createRoom();
     } else if ((role === "clue" || role === "guess" || role === "host") && room){
@@ -838,4 +941,3 @@
   </script>
 </body>
 </html>
-
