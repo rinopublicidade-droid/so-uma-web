@@ -536,7 +536,6 @@
       try{
         await signInAnonymously(auth);
       } catch(e){
-        // Se falhar, ainda tentamos seguir, mas a maioria das rules vai bloquear.
         console.error(e);
         showToast("Falha ao autenticar (Anonymous). Verifique Authentication → Anonymous.");
       }
@@ -555,6 +554,42 @@
     let room = roomParam || "";
     let currentPhase = "collecting";
     let latestClues = [];
+
+    // ✅ NOVO: listener de dicas com liga/desliga automático
+    let unsubscribeClues = null;
+    let cluesListening = false;
+
+    function stopCluesListener(){
+      if (unsubscribeClues){
+        unsubscribeClues();
+        unsubscribeClues = null;
+      }
+      cluesListening = false;
+    }
+
+    function startCluesListener(){
+      if (cluesListening) return;
+      cluesListening = true;
+
+      unsubscribeClues = onSnapshot(cluesColRef(room), (snap) => {
+        const items = [];
+        snap.forEach(d => items.push({ id:d.id, ...d.data() }));
+
+        items.sort((a,b)=>{
+          const ta = a.createdAt?.seconds || 0;
+          const tb = b.createdAt?.seconds || 0;
+          return ta - tb;
+        });
+
+        latestClues = items;
+        renderClues();
+      }, (err)=>{
+        console.error(err);
+        // se o jogador tentar ouvir em collecting, vai tomar permission denied.
+        // paramos e esperamos a fase liberar.
+        stopCluesListener();
+      });
+    }
 
     // ======= UI control =======
     function setupUI(){
@@ -718,7 +753,6 @@
           updatedAt: serverTimestamp()
         }, { merge: true });
 
-        renderClues();
         showToast("Dicas reveladas ✅");
       } catch(e){
         console.error(e);
@@ -873,7 +907,7 @@
             clueStatus.textContent = "";
             clueWaitReveal.style.display = "block";
           } else if (currentPhase === "revealed"){
-            clueStatus.textContent = "Dicas reveladas! Agora você pode ver o que todo mundo mandou.";
+            clueStatus.textContent = "Dicas reveladas! Atualiza automaticamente ✅";
             clueWaitReveal.style.display = "none";
           } else {
             clueStatus.textContent = "Host já enviou ao adivinhador. Aguarde a próxima carta.";
@@ -896,27 +930,23 @@
           }
         }
 
+        // ✅ Liga/desliga o listener de dicas conforme a fase e o papel
+        if (role === "host") {
+          startCluesListener();
+        } else if (role === "clue") {
+          if (currentPhase === "revealed" || currentPhase === "published") {
+            startCluesListener();
+          } else {
+            stopCluesListener();
+            latestClues = [];
+            renderClues();
+          }
+        }
+
         renderClues();
       }, (err)=>{
         console.error(err);
         showToast("Sem permissão (Firestore). Confirme Rules + Anonymous Auth.");
-      });
-
-      onSnapshot(cluesColRef(room), (snap) => {
-        const items = [];
-        snap.forEach(d => items.push({ id:d.id, ...d.data() }));
-
-        items.sort((a,b)=>{
-          const ta = a.createdAt?.seconds || 0;
-          const tb = b.createdAt?.seconds || 0;
-          return ta - tb;
-        });
-
-        latestClues = items;
-        renderClues();
-      }, (err)=>{
-        console.error(err);
-        showToast("Não consegui ler as dicas (Rules/phase).");
       });
     }
 
@@ -932,7 +962,6 @@
     // ======= init =======
     setupUI();
 
-    // Se o host abriu sem room, cria. Se abriu com room, conecta.
     if (role === "host" && !room){
       await createRoom();
     } else if ((role === "clue" || role === "guess" || role === "host") && room){
